@@ -83,6 +83,8 @@ function buildStore(): StoreShape {
       lng: 126.7794,
       sale_opens_at: t - 5 * MIN, // LIVE now
       embedding: embed({ pop: 2, arena: 1.5, global: 1, weekend: 1 }),
+      price: 180,
+      resale_markup: 4.5,
       hero_seat_no: 1,
     },
     {
@@ -99,6 +101,8 @@ function buildStore(): StoreShape {
       lng: 127.1262,
       sale_opens_at: t - 1 * MIN, // LIVE — claimable seat grid + org demo
       embedding: embed({ kpop: 2, global: 1.5, arena: 1 }),
+      price: 120,
+      resale_markup: 5.0,
     },
     {
       id: "ev-labubu",
@@ -114,6 +118,8 @@ function buildStore(): StoreShape {
       lng: 126.9236,
       sale_opens_at: t - 2 * MIN, // LIVE
       embedding: embed({ collectible: 2, gaming: 0.6, weekend: 1, global: 1 }),
+      price: 45,
+      resale_markup: 6.0,
     },
     {
       id: "ev-snkrs",
@@ -129,6 +135,8 @@ function buildStore(): StoreShape {
       lng: -74.006,
       sale_opens_at: t - 3 * MIN, // LIVE — second multi-seat floor
       embedding: embed({ sneakers: 2, collectible: 1.2, global: 1.5 }),
+      price: 200,
+      resale_markup: 3.5,
     },
     {
       id: "ev-indie",
@@ -144,6 +152,8 @@ function buildStore(): StoreShape {
       lng: 126.9946,
       sale_opens_at: t + 20 * MIN, // upcoming — countdown UI
       embedding: embed({ indie: 2, rock: 1, club: 1.5, weekend: 1.5 }),
+      price: 35,
+      resale_markup: 2.5,
     },
     {
       id: "ev-cup-final",
@@ -159,6 +169,8 @@ function buildStore(): StoreShape {
       lng: 126.8973,
       sale_opens_at: t + 30 * MIN,
       embedding: embed({ sports: 2, arena: 1.5, global: 1 }),
+      price: 90,
+      resale_markup: 4.0,
     },
   ];
 
@@ -204,6 +216,62 @@ export function store(): StoreShape {
 export function reseed(): StoreShape {
   g.__openslot = buildStore();
   return g.__openslot;
+}
+
+// Self-serve drop creation — the B2B onboarding path. An organizer defines a
+// drop; we provision the PG catalog row (discovery) + the DSQL slot/seats
+// (ledger). Mirrors the cross-DB onboarding saga of PRD §4.3.
+export function createDrop(input: {
+  title: string;
+  category: EventRow["category"];
+  capacity: number;
+  price: number;
+  organizer_name?: string;
+}): EventRow {
+  const s = store();
+  const t = Date.now();
+  const slug = (input.title || "drop")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 24);
+  const id = `ev-custom-${s.events.length + 1}-${slug || "drop"}`;
+  const ev: EventRow = {
+    id,
+    organizer_id: "org-you",
+    organizer_name: input.organizer_name || "Your venue",
+    title: input.title || "Untitled drop",
+    subtitle: "Your drop · just created",
+    category: input.category,
+    venue: "Your venue",
+    city: "Seoul",
+    country: "KR",
+    lat: 37.5563,
+    lng: 126.976,
+    sale_opens_at: t - 1000, // opens immediately for the demo
+    embedding: embedQuery(`${input.title} ${input.category}`),
+    price: Math.max(1, input.price),
+    resale_markup: 3.5,
+  };
+  s.events.unshift(ev);
+  const slot: Slot = {
+    id: `slot-${id}`,
+    event_id: id,
+    capacity: Math.max(1, Math.min(500, input.capacity)),
+    sale_opens_at: ev.sale_opens_at,
+  };
+  s.slots.set(id, slot);
+  const sections =
+    slot.capacity <= 1
+      ? [{ section: "GA", rows: 1 }]
+      : [
+          { section: "FLOOR", rows: Math.ceil(slot.capacity / 3) },
+          { section: "LWR", rows: Math.ceil(slot.capacity / 3) },
+          { section: "UPR", rows: Math.ceil(slot.capacity / 3) },
+        ];
+  s.ledger.seed(slot, sections);
+  s.waitlist.set(slot.id, []);
+  return ev;
 }
 
 export function eventById(id: string) {

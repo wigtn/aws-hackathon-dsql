@@ -63,6 +63,8 @@ export interface EventRow {
   sale_opens_at: number;
   embedding: number[]; // pgvector(1024) → small stub dim here
   hero_seat_no?: number;
+  price: number; // face value (USD) — organizer revenue basis
+  resale_markup: number; // typical scalper markup multiple (e.g. 3.5x) for defended-revenue model
 }
 
 export interface WaitlistEntry {
