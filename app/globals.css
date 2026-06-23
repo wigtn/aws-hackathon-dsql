@@ -1,0 +1,167 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   OpenSlot — "Terminal Editorial" design system
+   Ink-on-paper. Mono numerics. One signal color (vermilion) reserved for
+   live / sold-out / conflict states only. No gradients. No center-stage hero.
+   Authored as a deliberate type+space system, not a component dump.
+   ========================================================================== */
+
+@theme {
+  --color-paper:    #efece3;  /* warm newsprint background */
+  --color-paper-2:  #e8e4d8;  /* raised panel */
+  --color-paper-3:  #e0dbcc;  /* inset / track */
+  --color-ink:      #15140f;  /* near-black, warm */
+  --color-ink-2:    #45412f;  /* muted body */
+  --color-ink-3:    #756f59;  /* faint / captions */
+  --color-line:     #cdc7b4;  /* hairline rules */
+  --color-line-2:   #bbb49d;  /* stronger rule */
+  --color-signal:   #df3b16;  /* vermilion — live / sold-out / OC000 */
+  --color-affirm:   #2f6b3d;  /* strong-consistent / confirmed */
+  --color-hold:     #9a6a12;  /* held / pending */
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Inter", ui-sans-serif, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+:root {
+  color-scheme: light;
+}
+
+* { border-color: var(--color-line); }
+
+html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv05" 1, "ss01" 1;
+  /* faint engineering grid — barely perceptible, gives the paper tooth */
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--color-line) 28%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-line) 28%, transparent) 1px, transparent 1px);
+  background-size: 96px 96px;
+}
+
+::selection { background: var(--color-ink); color: var(--color-paper); }
+
+/* ---- numerics: tabular mono everywhere a number carries meaning ---------- */
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.mono { font-family: var(--font-mono); }
+
+/* ---- editorial type scale ------------------------------------------------ */
+.display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 0.94;
+  text-wrap: balance;
+}
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+.rule { height: 1px; background: var(--color-line); border: 0; }
+.rule-ink { height: 2px; background: var(--color-ink); border: 0; }
+
+/* ---- structural primitives ---------------------------------------------- */
+.shell { max-width: 1180px; margin-inline: auto; padding-inline: 24px; }
+
+.panel {
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-line);
+}
+.panel-inset { background: var(--color-paper-3); border: 1px solid var(--color-line); }
+
+/* hairline framed block, the workhorse container */
+.frame { border: 1px solid var(--color-ink); background: var(--color-paper); }
+
+/* ---- tags / status chips ------------------------------------------------- */
+.tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 2px 8px; border: 1px solid var(--color-line-2); color: var(--color-ink-2);
+  background: var(--color-paper);
+}
+.tag-signal { color: var(--color-signal); border-color: color-mix(in srgb, var(--color-signal) 55%, var(--color-line)); }
+.tag-affirm { color: var(--color-affirm); border-color: color-mix(in srgb, var(--color-affirm) 50%, var(--color-line)); }
+.tag-hold   { color: var(--color-hold);   border-color: color-mix(in srgb, var(--color-hold) 50%, var(--color-line)); }
+.tag-solid  { background: var(--color-ink); color: var(--color-paper); border-color: var(--color-ink); }
+
+.dot { width: 7px; height: 7px; border-radius: 9px; background: currentColor; display: inline-block; }
+.dot-live { background: var(--color-signal); box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-signal) 60%, transparent); animation: pulse 1.8s ease-out infinite; }
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-signal) 55%, transparent); }
+  70%  { box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-signal) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-signal) 0%, transparent); }
+}
+
+/* ---- buttons: square, ink, deliberate ------------------------------------ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: var(--font-mono); font-size: 0.8125rem; letter-spacing: 0.02em;
+  padding: 11px 18px; border: 1px solid var(--color-ink); background: var(--color-paper);
+  color: var(--color-ink); cursor: pointer; transition: transform .08s ease, background .12s ease, color .12s ease;
+  text-decoration: none;
+}
+.btn:hover { background: var(--color-ink); color: var(--color-paper); }
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--color-ink); color: var(--color-paper); }
+.btn-primary:hover { background: color-mix(in srgb, var(--color-ink) 85%, var(--color-signal)); }
+.btn-signal { background: var(--color-signal); color: var(--color-paper); border-color: var(--color-signal); }
+.btn-signal:hover { background: color-mix(in srgb, var(--color-signal) 84%, #000); color: var(--color-paper); }
+.btn:disabled { opacity: .42; cursor: not-allowed; }
+.btn:disabled:hover { background: var(--color-paper); color: var(--color-ink); }
+
+/* ---- data rows / ledger look --------------------------------------------- */
+.ledger { width: 100%; border-collapse: collapse; }
+.ledger th {
+  text-align: left; font-family: var(--font-mono); font-weight: 500;
+  font-size: 0.6875rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--color-ink-3); padding: 8px 12px; border-bottom: 1px solid var(--color-line);
+}
+.ledger td { padding: 10px 12px; border-bottom: 1px solid var(--color-line); font-size: 0.875rem; }
+.ledger tr:last-child td { border-bottom: 0; }
+.ledger tr:hover td { background: color-mix(in srgb, var(--color-ink) 3%, transparent); }
+
+/* ---- seat grid ----------------------------------------------------------- */
+.seat {
+  aspect-ratio: 1; display: grid; place-items: center;
+  font-family: var(--font-mono); font-size: 0.625rem; color: var(--color-ink-3);
+  border: 1px solid var(--color-line); background: var(--color-paper);
+  transition: background .1s ease, color .1s ease, border-color .1s ease;
+  cursor: pointer; user-select: none;
+}
+.seat[data-status="open"]:hover { border-color: var(--color-ink); color: var(--color-ink); }
+.seat[data-status="held"]      { background: color-mix(in srgb, var(--color-hold) 16%, var(--color-paper)); color: var(--color-hold); border-color: color-mix(in srgb, var(--color-hold) 40%, var(--color-line)); }
+.seat[data-status="confirmed"],
+.seat[data-status="activated"] { background: var(--color-ink); color: var(--color-paper); border-color: var(--color-ink); cursor: default; }
+.seat[data-status="released"]  { background: repeating-linear-gradient(45deg, transparent, transparent 3px, color-mix(in srgb, var(--color-line) 60%, transparent) 3px, color-mix(in srgb, var(--color-line) 60%, transparent) 4px); }
+.seat[data-status="sold"],
+.seat[data-status="soldout"]   { background: var(--color-signal); color: var(--color-paper); border-color: var(--color-signal); cursor: not-allowed; }
+.seat[data-selected="true"]    { outline: 2px solid var(--color-ink); outline-offset: -1px; }
+
+/* ---- capacity / progress bar --------------------------------------------- */
+.meter { height: 8px; background: var(--color-paper-3); border: 1px solid var(--color-line); position: relative; overflow: hidden; }
+.meter > span { position: absolute; inset: 0 auto 0 0; background: var(--color-ink); }
+.meter.is-hot > span { background: var(--color-signal); }
+
+/* ---- histogram bars (demo) ----------------------------------------------- */
+.hbar { background: var(--color-ink); width: 100%; transition: height .3s cubic-bezier(.2,.7,.3,1); }
+.hbar.peak { background: var(--color-signal); }
+
+/* ---- subtle entrance ----------------------------------------------------- */
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise .5s cubic-bezier(.2,.7,.3,1) both; }
+
+/* ---- link underline, editorial ------------------------------------------- */
+.ulink { color: var(--color-ink); text-decoration: none; border-bottom: 1px solid var(--color-line-2); transition: border-color .12s ease; }
+.ulink:hover { border-color: var(--color-ink); }
+
+.focusable:focus-visible { outline: 2px solid var(--color-signal); outline-offset: 2px; }
