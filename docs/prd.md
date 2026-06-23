@@ -13,7 +13,7 @@
 | 좌석 선택 = **관계형**(section/row/seat + (x,y) 렌더용 좌표) | 위와 동일. |
 | 지오펜스(현장 활성화)를 **반되팔이 보조 레이어**로 명시. GPS 스푸핑 한계 명문화. | robust한 현장증명은 회전바코드+게이트스캔(=PostGIS 무관). 지오펜스는 한 겹. |
 | DSQL 충돌 에러코드 **`OC000`**(이전 `40001` 오기 정정) | AWS 공식 문서 확인. |
-| 트랙 후보를 **Million-Scale Global**로 (엔터테인먼트·글로벌·수백만) 격상 검토 | 글로벌 티켓팅/드롭 = 엔터+글로벌+멀티리전 아키텍처 = 트랙 정의에 정확히 부합. |
+| 트랙 = **Monetizable B2B** 확정 (이벤트 비즈니스에 파는 온세일 인프라/SaaS) | 돈 내는 고객=주최자 → monetization이 B2B. DSQL 인프라 가치가 B2B 심사 Technical 축에 직격. Global은 'million-scale' 과장 위험, B2C는 붐빔. 데모 히어로 = `/org/console`. |
 
 ---
 
@@ -305,8 +305,8 @@ seat_map(event_id uuid, seat_label text, section text, row text, x int, y int); 
 ---
 
 ## 12. 트랙 & 수익
-- **(M-1) 트랙 확정 = Million-Scale Global App.** 엔터테인먼트(콘서트·드롭) + 글로벌 + 멀티리전 active-active 아키텍처로 수백만 확장 = 트랙 정의에 정확히 부합 + 멀티리전 DSQL 서사와 최적 정합. **단일 커밋(B2B 후보 폐기).** 제출 패키징(§13)·메시지 전부 이 트랙으로 통일.
-- 수익: 주최자 티켓 수수료/구독(범용툴보다 저), 봇/되팔이 방지 가치, 프리미엄 발견 노출. 구매자 free.
+- **(M-1) 트랙 확정 = Monetizable B2B App.** 돈 내는 고객 = **주최자(이벤트 비즈니스: 아티스트·브랜드·프로모터·티켓 셀러)**, 제품 = 그들이 온세일/드롭을 **초과판매0·반스캘핑·글로벌 동시판매**로 돌리는 **SaaS/인프라**. monetization이 그 자체로 B2B(구매자 무료, 주최자 과금). 멀티리전 DSQL 강일관 = "그 안정성을 떠받치는 인프라 가치"로 B2B 심사의 Technical/DB-integration 축에 직격. **단일 커밋(Global·B2C 후보 폐기 — Global은 'million-scale' 과장 위험, B2C는 붐비는 필드 + 컨슈머 UX 보상).** 제출 패키징(§13)·데모 히어로(=`/org/console`)·메시지 전부 B2B로 통일.
+- **수익(B2B 모델)**: 주최자 거래 수수료 + 구독(좌석원장·반스캘핑·실시간 판매 콘솔) + 프리미엄 발견 노출. 가치 = 봇·되팔이·초과판매로 새는 매출·평판 방어. 구매자 free.
 
 ---
 
@@ -326,7 +326,7 @@ seat_map(event_id uuid, seat_label text, section text, row text, x int, y int); 
 | 지오펜스 | 현장 활성화 보조(회전바코드+스캔이 robust) |
 | anti-scalp | 신원·디바이스 바인딩 + 회전바코드 + 공정 재방출 (DSQL은 더블판매만) |
 | 충돌코드 | **OC000** (40001 폐기) |
-| 트랙 | **Million-Scale Global App** (단일 커밋, B2B 폐기) |
+| 트랙 | **Monetizable B2B App** (이벤트 비즈니스 대상 온세일 인프라/SaaS. Global·B2C 폐기) |
 | 다좌석 | 1인 1좌석 MVP 단순화, 그룹구매 post-MVP |
 | 충돌코드 | OC000 (40001 폐기) |
 

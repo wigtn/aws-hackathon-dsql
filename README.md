@@ -1,10 +1,16 @@
-# OpenSlot — zero oversell, across regions
+# OpenSlot — the on-sale infrastructure for high-demand drops
 
-> **H0: Hack the Zero Stack** submission · Track: **Million-Scale Global App**
-> The same scarce seat, bought worldwide at the same instant — with **zero
-> oversell across regions** — on **Amazon Aurora DSQL** multi-region strong
-> consistency. Discovery (PostGIS + pgvector) runs on **Amazon Aurora
-> PostgreSQL**. Frontend on **Vercel** / **Next.js**.
+> **H0: Hack the Zero Stack** submission · Track: **Monetizable B2B App**
+> The on-sale/drop infrastructure that event businesses — artists, brands,
+> promoters, ticket sellers — run to take a worldwide rush for the same scarce
+> seat with **zero oversell across regions** and resale made a losing trade.
+> Built on **Amazon Aurora DSQL** multi-region strong consistency (seat ledger)
+> + **Amazon Aurora PostgreSQL** PostGIS/pgvector (discovery). Frontend on
+> **Vercel** / **Next.js**.
+>
+> **Who pays:** the organizers (B2B — fees / subscription / anti-scalp value).
+> Buyers transact free. The product surface that sells it is the **organizer
+> console** (`/org/console`); the consumer flow shows the guarantee it delivers.
 
 ---
 

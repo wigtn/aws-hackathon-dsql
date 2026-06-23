@@ -21,9 +21,11 @@
 
 ### 1.2 4개 트랙 (각 트랙별 1/2/3등 시상)
 1. **Monetizable B2C App** — 소비자(이커머스·여행·리테일·호스피탈리티)
-2. **Monetizable B2B App** — 비즈니스(금융·테크·헬스케어·보험)
-3. **Million-Scale Global App** — 게이밍·소셜·**엔터테인먼트** + 글로벌 확장성  ← **OpenSlot 타깃**
+2. **Monetizable B2B App** — 비즈니스(금융·테크·**테크 SaaS**)  ← **OpenSlot 타깃** (이벤트 비즈니스에 파는 온세일 인프라)
+3. **Million-Scale Global App** — 게이밍·소셜·엔터테인먼트 + 글로벌 확장성
 4. **Open Innovation** — 스택만 쓰면 무엇이든
+
+> **트랙 = Monetizable B2B.** 돈 내는 고객 = 주최자(아티스트·브랜드·프로모터·티켓 셀러)이고, 제품 = 그들이 온세일/드롭을 초과판매0·반스캘핑으로 돌리는 SaaS/인프라. 데모 히어로 = `/org/console`. (Global은 "million-scale" 과장 위험 + 컨슈머 UX 보상이라 폐기, B2C는 붐비는 필드라 폐기. DSQL의 멀티리전 강일관 기술 서사는 그대로 유지 — 그게 인프라 가치의 근거.)
 
 ### 1.3 제출물 (필수)
 - 데모 영상 **< 3분**
