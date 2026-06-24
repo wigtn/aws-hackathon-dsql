@@ -6,9 +6,10 @@ import type { DiscoveryResult } from "@/lib/discovery";
 
 // GET /api/discover?lat=&lng=&radiusKm=&q=
 // Geo radius (PostGIS ST_DWithin) + semantic rank (pgvector <=>) on Aurora
-// PostgreSQL when AURORA_PG_URL is set; otherwise the deterministic model. Live
-// seat stock is JOINed from the seat plane (DSQL/sim). The `plane` field reports
-// what actually ran — never a real-plane claim when on the simulation (FR-A1).
+// PostgreSQL when AURORA_PG_URL is set; otherwise the deterministic in-app
+// model. Live seat stock is JOINed from the seat plane (DSQL/sim) for the
+// ranked top-K only. The `plane` field reports what actually ran — never a
+// real-plane claim when Aurora PG isn't provisioned (FR-A1).
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const num = (k: string) =>
@@ -40,8 +41,10 @@ export async function GET(req: NextRequest) {
     });
     plane = "aurora-postgresql · postgis + pgvector";
   } else {
+    // in-app discovery model (geo radius + semantic) — honest until Aurora PG
+    // is provisioned; not a real-PostGIS/pgvector claim.
     results = await getData().discover(params);
-    plane = "simulation · models postgis + pgvector";
+    plane = "discovery model · geo radius + semantic (Aurora PG pending)";
   }
 
   return NextResponse.json({ plane, count: results.length, results });

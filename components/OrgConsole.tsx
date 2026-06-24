@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eyebrow, Tag, Meter } from "@/components/ui";
+import { FairnessLedger } from "@/components/FairnessLedger";
 
 interface EvOpt {
   id: string;
@@ -266,6 +267,10 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
                 </div>
               </div>
             )}
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <FairnessLedger eventId={eventId} />
           </div>
         </div>
 

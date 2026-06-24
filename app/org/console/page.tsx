@@ -22,9 +22,9 @@ export default async function OrgPage() {
         Run your on-sale.
       </h1>
       <p className="mono" style={{ fontSize: 13, color: "var(--color-ink-3)", margin: "12px 0 28px", maxWidth: 640 }}>
-        Create a drop, watch it fill in real time across both regions, and see the
-        revenue OpenSlot defends from oversell and scalpers — the reason a business
-        runs its sale here instead of on a site that buckles and double-sells.
+        Create a drop, watch it fill across both regions, see the revenue OpenSlot
+        defends from oversell and scalpers, and prove the sale was fair with a
+        tamper-evident allocation ledger — only a strongly-consistent DSQL can.
       </p>
       <OrgConsole events={events} />
     </div>

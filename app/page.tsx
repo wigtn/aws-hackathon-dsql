@@ -90,6 +90,11 @@ export default function HomePage() {
               p: "See, per drop, the money OpenSlot keeps in your primary sale — oversell refunds avoided and resale margin repatriated.",
               tag: "$ / drop",
             },
+            {
+              h: "Verifiably fair",
+              p: "Every allocation is hash-chained in strict global commit order on one strongly-consistent ledger — provable to artists and regulators, with no insider or bot lane. Something async multi-region simply can't offer.",
+              tag: "auditable",
+            },
           ].map((c) => (
             <div key={c.h} className="frame" style={{ padding: 18 }}>
               <span className="tag" style={{ marginBottom: 12, display: "inline-flex" }}>{c.tag}</span>
