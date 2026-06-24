@@ -30,6 +30,7 @@ interface Metrics {
   sell_through: number;
   gross_revenue: number;
   region: Record<string, number>;
+  region_mode?: "multi" | "single" | "simulation";
   defended: {
     oversell_blocked: number;
     oversell_defended_usd: number;
@@ -277,27 +278,43 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
         {/* rail */}
         <aside>
           {/* region split */}
-          {metrics && (
-            <div className="frame" style={{ padding: 16, marginBottom: 14 }}>
-              <Eyebrow>writes by region · active-active</Eyebrow>
-              {(["us-east-1", "us-east-2"] as const).map((r) => {
-                const v = metrics.region[r] ?? 0;
-                const max = Math.max(1, metrics.region["us-east-1"] + metrics.region["us-east-2"]);
-                return (
-                  <div key={r} style={{ marginTop: 10 }}>
-                    <div className="flex justify-between" style={{ marginBottom: 4 }}>
-                      <span className="num" style={{ fontSize: 12 }}>{r}</span>
-                      <span className="num" style={{ fontSize: 12, color: "var(--color-ink-3)" }}>{v}</span>
+          {metrics && (() => {
+            // Honest topology (FR-A1): only claim active-active when BOTH
+            // endpoints are live. Single-region or simulation say so plainly.
+            const mode = metrics.region_mode ?? "multi";
+            const regions = mode === "multi" ? (["us-east-1", "us-east-2"] as const) : (["us-east-1"] as const);
+            const total = Math.max(1, regions.reduce((n, r) => n + (metrics.region[r] ?? 0), 0));
+            const label = mode === "multi"
+              ? "writes by region · active-active"
+              : mode === "single"
+                ? "writes by region · single-region"
+                : "writes by region · simulation";
+            const foot = mode === "multi"
+              ? "one logical DSQL database · both endpoints take writes"
+              : mode === "single"
+                ? "single-region (multi-region not configured)"
+                : "simulated multi-region (no live DSQL endpoint)";
+            return (
+              <div className="frame" style={{ padding: 16, marginBottom: 14 }}>
+                <Eyebrow>{label}</Eyebrow>
+                {regions.map((r) => {
+                  const v = metrics.region[r] ?? 0;
+                  return (
+                    <div key={r} style={{ marginTop: 10 }}>
+                      <div className="flex justify-between" style={{ marginBottom: 4 }}>
+                        <span className="num" style={{ fontSize: 12 }}>{r}</span>
+                        <span className="num" style={{ fontSize: 12, color: "var(--color-ink-3)" }}>{v}</span>
+                      </div>
+                      <Meter value={v} max={total} />
                     </div>
-                    <Meter value={v} max={max} />
-                  </div>
-                );
-              })}
-              <p className="mono" style={{ fontSize: 10.5, color: "var(--color-ink-3)", marginTop: 10 }}>
-                one logical DSQL database · both endpoints take writes
-              </p>
-            </div>
-          )}
+                  );
+                })}
+                <p className="mono" style={{ fontSize: 10.5, color: "var(--color-ink-3)", marginTop: 10 }}>
+                  {foot}
+                </p>
+              </div>
+            );
+          })()}
 
           {/* defended breakdown */}
           {metrics && (

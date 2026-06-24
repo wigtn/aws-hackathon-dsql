@@ -15,7 +15,7 @@ import { discover as simDiscover, DiscoveryParams, DiscoveryResult } from "@/lib
 import { ClaimResult, EventRow, RegionId, SeatRow, SeatStatus, Slot } from "@/lib/sim/types";
 import { DATA_PLANE } from "@/lib/db";
 import { dsqlData } from "@/lib/db/dsql-data";
-import { recordAllocation } from "@/lib/fairness";
+import { fingerprint, type Allocation } from "@/lib/fairness";
 
 // Public seat shape — NO buyer_id / reserved_for (PII). Surfaces only what the
 // seat map and organizer floor need: status + occupied/reserved booleans (FR-A4).
@@ -58,6 +58,7 @@ export interface Metrics {
   sell_through: number;
   gross_revenue: number;
   region: Record<string, number>;
+  region_mode?: "multi" | "single" | "simulation"; // FR-A1: honest topology (set by the route)
   counts: Record<SeatStatus, number>;
   defended: {
     oversell_blocked: number;
@@ -106,6 +107,9 @@ export interface Data {
   // PG discovery path so it joins stock for the ranked top-K only, never the
   // whole catalog (review M2).
   remainingFor(eventIds: string[]): Promise<Record<string, number>>;
+  // Fairness allocations read from the seat ledger in commit order (the chain
+  // source of truth — consistent across instances on the DSQL plane).
+  fairnessAllocations(eventId: string): Promise<Allocation[]>;
   metrics(eventId: string): Promise<Metrics | null>;
   myTickets(buyerId: string): Promise<{ tickets: MyTicket[]; waitlist: { event_id: string; title: string; position: number }[] }>;
   discover(p: DiscoveryParams): Promise<DiscoveryResult[]>;
@@ -166,9 +170,7 @@ const sim: Data = {
   },
   async claim(eventId, buyerId, region) {
     const slot = simSlotForEvent(eventId)!;
-    const r = store().ledger.claim(slot.id, buyerId, region);
-    if (r.ok && r.seat_no != null) recordAllocation(eventId, r.seat_no, buyerId, region);
-    return r;
+    return store().ledger.claim(slot.id, buyerId, region);
   },
   async confirm(eventId, seatNo, buyerId) {
     const slot = simSlotForEvent(eventId)!;
@@ -205,6 +207,20 @@ const sim: Data = {
       out[id] = slot ? s.ledger.remainingOpen(slot.id) : 0;
     }
     return out;
+  },
+  async fairnessAllocations(eventId) {
+    const slot = simSlotForEvent(eventId);
+    if (!slot) return [];
+    return store()
+      .ledger.seatsOf(slot.id)
+      .filter((s) => s.buyer_id && s.claimed_at != null)
+      .sort((a, b) => a.claimed_at! - b.claimed_at! || a.seat_no - b.seat_no)
+      .map((s) => ({
+        seat_no: s.seat_no,
+        region: s.region ?? "us-east-1",
+        buyer_fingerprint: fingerprint(s.buyer_id!),
+        committed_at: s.claimed_at!,
+      }));
   },
   async metrics(eventId) {
     const ev = simEventById(eventId);
