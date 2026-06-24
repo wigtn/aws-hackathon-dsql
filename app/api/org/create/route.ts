@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createDrop } from "@/lib/sim/store";
+import { getData } from "@/lib/data";
 import { EventCategory } from "@/lib/sim/types";
 
 // POST /api/org/create  { title, category, capacity, price, organizer_name? }
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       : undefined;
   if (!title) return NextResponse.json({ error: "title required" }, { status: 400 });
 
-  const ev = createDrop({
+  const ev = await getData().createDrop({
     title,
     category,
     capacity,

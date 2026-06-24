@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { eventById, slotForEvent } from "@/lib/sim/store";
+import { getData } from "@/lib/data";
 import { SeatMap } from "@/components/SeatMap";
 import { Countdown } from "@/components/Countdown";
 import { Eyebrow, Tag } from "@/components/ui";
@@ -12,8 +12,9 @@ export default async function EventPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const event = eventById(id);
-  const slot = slotForEvent(id);
+  const data = getData();
+  const event = await data.eventById(id);
+  const slot = await data.slotForEvent(id);
   if (!event || !slot) notFound();
 
   return (

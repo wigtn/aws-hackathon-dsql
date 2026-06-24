@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { discover } from "@/lib/discovery";
+import { getData } from "@/lib/data";
 
 // GET /api/discover?lat=&lng=&radiusKm=&q=
 // PostGIS radius + pgvector semantic rank → top-K joined with live DSQL stock.
@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   const num = (k: string) =>
     sp.get(k) != null && sp.get(k) !== "" ? Number(sp.get(k)) : undefined;
 
-  const results = discover({
+  const results = await getData().discover({
     lat: num("lat"),
     lng: num("lng"),
     radiusKm: num("radiusKm"),

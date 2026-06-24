@@ -14,9 +14,8 @@
 // translation of SeatLedger.commitClaim wrapped in lib/occ.withOccRetry.
 // ============================================================================
 
-export const DATA_PLANE: "aurora" | "simulation" = process.env.DSQL_ENDPOINT
-  ? "aurora"
-  : "simulation";
+export const DATA_PLANE: "aurora" | "simulation" =
+  process.env.DSQL_ENDPOINT_US_EAST_1 ? "aurora" : "simulation";
 
 export interface DsqlConfig {
   endpointEast1?: string; // us-east-1 regional endpoint

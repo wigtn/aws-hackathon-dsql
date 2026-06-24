@@ -1,17 +1,19 @@
 import { OrgConsole } from "@/components/OrgConsole";
 import { Eyebrow } from "@/components/ui";
-import { store } from "@/lib/sim/store";
+import { getData } from "@/lib/data";
 
 export const metadata = { title: "Organizer console — OpenSlot" };
+export const dynamic = "force-dynamic";
 
-export default function OrgPage() {
-  const s = store();
-  const events = s.events.map((e) => ({
-    id: e.id,
-    title: e.title,
-    capacity: s.slots.get(e.id)?.capacity ?? 0,
-    price: e.price,
-  }));
+export default async function OrgPage() {
+  const data = getData();
+  const evs = await data.listEvents();
+  const events = await Promise.all(
+    evs.map(async (e) => {
+      const slot = await data.slotForEvent(e.id);
+      return { id: e.id, title: e.title, capacity: slot?.capacity ?? 0, price: e.price };
+    }),
+  );
 
   return (
     <div className="shell" style={{ paddingTop: 36 }}>

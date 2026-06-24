@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { eventById } from "@/lib/sim/store";
+import { getData } from "@/lib/data";
 import { ClaimFlow } from "@/components/ClaimFlow";
 
 export default async function ClaimPage({
@@ -10,7 +10,7 @@ export default async function ClaimPage({
   params: Promise<{ slotId: string }>;
 }) {
   const { slotId } = await params; // routed as eventId from the seat map
-  const event = eventById(slotId);
+  const event = await getData().eventById(slotId);
   if (!event) notFound();
 
   return (
