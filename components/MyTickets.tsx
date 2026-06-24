@@ -42,7 +42,7 @@ export function MyTickets() {
         <p className="mono" style={{ fontSize: 13, color: "var(--color-ink-2)", margin: "10px 0 16px" }}>
           Your tickets bind to a verified phone + this device. Claim a seat to start.
         </p>
-        <Link href="/" className="btn btn-primary focusable">browse live drops →</Link>
+        <Link href="/discover" className="btn btn-primary focusable">browse live drops →</Link>
       </div>
     );
 

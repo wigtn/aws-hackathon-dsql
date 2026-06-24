@@ -4,6 +4,7 @@ import { getData } from "@/lib/data";
 import { SeatMap } from "@/components/SeatMap";
 import { Countdown } from "@/components/Countdown";
 import { Eyebrow, Tag } from "@/components/ui";
+import { StorefrontBar } from "@/components/PoweredBy";
 import { REGION_LABEL } from "@/lib/sim/types";
 
 export default async function EventPage({
@@ -19,8 +20,9 @@ export default async function EventPage({
 
   return (
     <div className="shell" style={{ paddingTop: 28 }}>
-      <Link href="/" className="eyebrow ulink" style={{ borderBottom: "none" }}>
-        ← discover
+      <StorefrontBar organizer={event.organizer_name} />
+      <Link href="/discover" className="eyebrow ulink" style={{ borderBottom: "none" }}>
+        ← buyer view
       </Link>
 
       <div

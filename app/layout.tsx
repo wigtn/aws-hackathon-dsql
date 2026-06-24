@@ -23,9 +23,9 @@ export const metadata: Metadata = {
 };
 
 const NAV = [
-  { href: "/", label: "Discover" },
-  { href: "/demo", label: "Cross-region demo" },
   { href: "/org/console", label: "Organizer" },
+  { href: "/demo", label: "Cross-region demo" },
+  { href: "/discover", label: "Buyer view" },
   { href: "/me", label: "My tickets" },
 ];
 
@@ -42,7 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               >
                 OpenSlot
               </span>
-              <span className="eyebrow hidden sm:inline">global drops · ticketing</span>
+              <span className="eyebrow hidden sm:inline">on-sale infrastructure</span>
             </Link>
             <nav className="flex items-center gap-1">
               {NAV.map((n) => (

@@ -1,4 +1,5 @@
 import { MyTickets } from "@/components/MyTickets";
+import { PoweredBy } from "@/components/PoweredBy";
 import { Eyebrow } from "@/components/ui";
 
 export const metadata = { title: "My tickets — OpenSlot" };
@@ -11,6 +12,7 @@ export default function MePage() {
         My tickets
       </h1>
       <MyTickets />
+      <PoweredBy />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getData } from "@/lib/data";
 import { ClaimFlow } from "@/components/ClaimFlow";
+import { PoweredBy } from "@/components/PoweredBy";
 
 export default async function ClaimPage({
   params,
@@ -23,6 +24,7 @@ export default async function ClaimPage({
           <ClaimFlow eventId={event.id} title={event.title} />
         </Suspense>
       </div>
+      <PoweredBy />
     </div>
   );
 }
