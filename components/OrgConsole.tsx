@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Eyebrow, Tag, Meter } from "@/components/ui";
 
 interface EvOpt {
@@ -61,7 +62,15 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
   const [rush, setRush] = useState<RushResult | null>(null);
   const [rushing, setRushing] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [orgName, setOrgName] = useState<string | null>(null);
   const owned = useRef<Map<number, string>>(new Map());
+
+  useEffect(() => {
+    try {
+      const s = JSON.parse(localStorage.getItem("openslot.org") || "null");
+      if (s?.name) setOrgName(s.name);
+    } catch {}
+  }, []);
 
   const load = useCallback(async () => {
     const [a, b] = await Promise.all([
@@ -164,7 +173,12 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
       <div className="frame" style={{ padding: "12px 16px", marginBottom: 18 }}>
         <div className="flex flex-wrap items-center gap-3">
           <span className="eyebrow">organizer</span>
-          <span className="num" style={{ fontSize: 13 }}>{metrics?.organizer ?? "Your venue"}</span>
+          <span className="num" style={{ fontSize: 13 }}>{orgName ?? metrics?.organizer ?? "Your venue"}</span>
+          {orgName ? (
+            <Tag tone="affirm">account active</Tag>
+          ) : (
+            <Link href="/org/onboarding" className="eyebrow ulink">set up account →</Link>
+          )}
           <select
             value={eventId}
             onChange={(e) => setEventId(e.target.value)}
@@ -208,11 +222,19 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
                   </div>
                 ))}
               </div>
-              <div className="flex flex-wrap gap-2" style={{ marginTop: 14 }}>
-                <button className="btn focusable" disabled={busy} onClick={() => fillSome(8)}>+ 8 buyers</button>
-                <button className="btn focusable" disabled={busy} onClick={() => fillSome(snap.remaining_open)}>fill to sold out</button>
-                <button className="btn focusable" onClick={addWaitlister}>+ waitlister</button>
-                <button className="btn btn-signal focusable" onClick={cancelAndReoffer}>cancel → re-offer</button>
+              <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px dashed var(--color-line-2)" }}>
+                <div className="flex items-center gap-2" style={{ marginBottom: 9 }}>
+                  <Tag>demo controls</Tag>
+                  <span className="mono" style={{ fontSize: 10.5, color: "var(--color-ink-3)" }}>
+                    simulate buyer activity — there are no real buyers in the demo
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button className="btn focusable" disabled={busy} onClick={() => fillSome(8)}>+ 8 buyers</button>
+                  <button className="btn focusable" disabled={busy} onClick={() => fillSome(snap.remaining_open)}>fill to sold out</button>
+                  <button className="btn focusable" onClick={addWaitlister}>+ waitlister</button>
+                  <button className="btn btn-signal focusable" onClick={cancelAndReoffer}>cancel → re-offer</button>
+                </div>
               </div>
             </div>
           )}
@@ -319,6 +341,7 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
 
       {showCreate && (
         <CreateDrop
+          orgName={orgName}
           onClose={() => setShowCreate(false)}
           onCreated={(id, opt) => {
             setEvents((e) => [opt, ...e]);
@@ -334,9 +357,11 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
 }
 
 function CreateDrop({
+  orgName,
   onClose,
   onCreated,
 }: {
+  orgName: string | null;
   onClose: () => void;
   onCreated: (id: string, opt: EvOpt) => void;
 }) {
@@ -368,7 +393,7 @@ function CreateDrop({
     const opens_at = opensAtMs();
     const res = await fetch("/api/org/create", {
       method: "POST",
-      body: JSON.stringify({ title, category: PRESETS[preset].category, capacity, price, opens_at }),
+      body: JSON.stringify({ title, category: PRESETS[preset].category, capacity, price, opens_at, organizer_name: orgName ?? undefined }),
     });
     const d = await res.json();
     setBusy(false);
