@@ -227,9 +227,14 @@ export function createDrop(input: {
   capacity: number;
   price: number;
   organizer_name?: string;
+  opens_at?: number; // epoch ms; default = immediately
 }): EventRow {
   const s = store();
   const t = Date.now();
+  const opensAt =
+    typeof input.opens_at === "number" && input.opens_at > 0
+      ? input.opens_at
+      : t - 1000; // immediate
   const slug = (input.title || "drop")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -248,7 +253,7 @@ export function createDrop(input: {
     country: "KR",
     lat: 37.5563,
     lng: 126.976,
-    sale_opens_at: t - 1000, // opens immediately for the demo
+    sale_opens_at: opensAt,
     embedding: embedQuery(`${input.title} ${input.category}`),
     price: Math.max(1, input.price),
     resale_markup: 3.5,

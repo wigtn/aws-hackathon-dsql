@@ -14,6 +14,10 @@ export async function POST(req: NextRequest) {
   ) as EventCategory;
   const capacity = Math.max(1, Math.min(500, Number(body.capacity) || 50));
   const price = Math.max(1, Math.min(100000, Number(body.price) || 50));
+  const opens_at =
+    Number.isFinite(body.opens_at) && Number(body.opens_at) > 0
+      ? Number(body.opens_at)
+      : undefined;
   if (!title) return NextResponse.json({ error: "title required" }, { status: 400 });
 
   const ev = createDrop({
@@ -22,6 +26,12 @@ export async function POST(req: NextRequest) {
     capacity,
     price,
     organizer_name: body.organizer_name,
+    opens_at,
   });
-  return NextResponse.json({ ok: true, event_id: ev.id, title: ev.title });
+  return NextResponse.json({
+    ok: true,
+    event_id: ev.id,
+    title: ev.title,
+    sale_opens_at: ev.sale_opens_at,
+  });
 }

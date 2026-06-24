@@ -350,19 +350,37 @@ function CreateDrop({
   const [preset, setPreset] = useState(0);
   const [capacity, setCapacity] = useState(80);
   const [price, setPrice] = useState(120);
+  const [openMode, setOpenMode] = useState<"now" | "1m" | "5m" | "custom">("now");
+  const [customDt, setCustomDt] = useState("");
   const [busy, setBusy] = useState(false);
+
+  function opensAtMs(): number | undefined {
+    const now = Date.now();
+    if (openMode === "1m") return now + 60_000;
+    if (openMode === "5m") return now + 300_000;
+    if (openMode === "custom" && customDt) return new Date(customDt).getTime();
+    return undefined; // now / immediate
+  }
 
   async function submit() {
     if (!title.trim()) return;
     setBusy(true);
+    const opens_at = opensAtMs();
     const res = await fetch("/api/org/create", {
       method: "POST",
-      body: JSON.stringify({ title, category: PRESETS[preset].category, capacity, price }),
+      body: JSON.stringify({ title, category: PRESETS[preset].category, capacity, price, opens_at }),
     });
     const d = await res.json();
     setBusy(false);
     if (d.ok) onCreated(d.event_id, { id: d.event_id, title: d.title, capacity, price });
   }
+
+  const OPEN_OPTS: { key: "now" | "1m" | "5m" | "custom"; label: string }[] = [
+    { key: "now", label: "open now" },
+    { key: "1m", label: "in 1 min" },
+    { key: "5m", label: "in 5 min" },
+    { key: "custom", label: "schedule…" },
+  ];
 
   return (
     <div
@@ -402,9 +420,26 @@ function CreateDrop({
           </div>
         </div>
 
+        <label className="eyebrow" style={{ display: "block", marginTop: 14, marginBottom: 6 }}>on-sale opens</label>
+        <div className="flex flex-wrap gap-2">
+          {OPEN_OPTS.map((o) => (
+            <button key={o.key} onClick={() => setOpenMode(o.key)} className="mono focusable" style={{ fontSize: 12, padding: "7px 12px", cursor: "pointer", border: `1px solid ${openMode === o.key ? "var(--color-ink)" : "var(--color-line-2)"}`, background: openMode === o.key ? "var(--color-ink)" : "var(--color-paper)", color: openMode === o.key ? "var(--color-paper)" : "var(--color-ink-2)" }}>
+              {o.label}
+            </button>
+          ))}
+        </div>
+        {openMode === "custom" && (
+          <input type="datetime-local" value={customDt} onChange={(e) => setCustomDt(e.target.value)} className="mono focusable" style={{ ...inp, marginTop: 8 }} />
+        )}
+        <p className="mono" style={{ fontSize: 10.5, color: "var(--color-ink-3)", marginTop: 6 }}>
+          {openMode === "now"
+            ? "buyers can claim immediately."
+            : "buyers see a countdown; claims are locked until the on-sale opens (returns NOT_OPEN)."}
+        </p>
+
         <div className="flex justify-end gap-2" style={{ marginTop: 20 }}>
           <button className="btn focusable" onClick={onClose}>cancel</button>
-          <button className="btn btn-primary focusable" disabled={busy || !title.trim()} onClick={submit}>{busy ? "provisioning…" : "create + open sale →"}</button>
+          <button className="btn btn-primary focusable" disabled={busy || !title.trim()} onClick={submit}>{busy ? "provisioning…" : openMode === "now" ? "create + open now →" : "create + schedule →"}</button>
         </div>
         <p className="mono" style={{ fontSize: 10.5, color: "var(--color-ink-3)", marginTop: 12 }}>
           provisions PG catalog row (discovery) + DSQL slot/seats (ledger), opens immediately.
