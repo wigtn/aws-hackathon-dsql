@@ -10,6 +10,7 @@ interface EvOpt {
   title: string;
   capacity: number;
   price: number;
+  organizer?: string;
 }
 interface Seat {
   seat_no: number;
@@ -54,7 +55,7 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
   const router = useRouter();
   const [events, setEvents] = useState(initial);
   const [eventId, setEventId] = useState(
-    initial.find((e) => e.capacity > 1)?.id ?? initial[0].id,
+    initial.find((e) => e.capacity > 1)?.id ?? initial[0]?.id ?? "",
   );
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
@@ -74,7 +75,20 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
     } catch {}
   }, []);
 
+  // an organizer only manages THEIR OWN drops (per-organizer filtering).
+  // No org session (didn't onboard) → show all (demo convenience).
+  const visible = orgName ? events.filter((e) => e.organizer === orgName) : events;
+  useEffect(() => {
+    const v = orgName ? events.filter((e) => e.organizer === orgName) : events;
+    if (v.length && !v.some((e) => e.id === eventId)) setEventId(v[0].id);
+  }, [orgName, events, eventId]);
+
   const load = useCallback(async () => {
+    if (!eventId) {
+      setSnap(null);
+      setMetrics(null);
+      return;
+    }
     const [a, b] = await Promise.all([
       fetch(`/api/claim?eventId=${eventId}`, { cache: "no-store" }),
       fetch(`/api/org/metrics?eventId=${eventId}`, { cache: "no-store" }),
@@ -186,10 +200,15 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
             onChange={(e) => setEventId(e.target.value)}
             className="mono focusable"
             style={{ fontSize: 13, padding: "8px 11px", border: "1px solid var(--color-ink)", background: "var(--color-paper)", color: "var(--color-ink)" }}
+            disabled={visible.length === 0}
           >
-            {events.map((e) => (
-              <option key={e.id} value={e.id}>{e.title} · {usd(e.price)} · cap {e.capacity}</option>
-            ))}
+            {visible.length === 0 ? (
+              <option>— no drops yet —</option>
+            ) : (
+              visible.map((e) => (
+                <option key={e.id} value={e.id}>{e.title} · {usd(e.price)} · cap {e.capacity}</option>
+              ))
+            )}
           </select>
           <div style={{ marginLeft: "auto" }} className="flex items-center gap-2">
             {snap && snap.remaining_open === 0 && <Tag tone="signal">sold out</Tag>}
@@ -197,6 +216,16 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
           </div>
         </div>
       </div>
+
+      {visible.length === 0 && (
+        <div className="frame" style={{ padding: 28, textAlign: "center", marginBottom: 18 }}>
+          <Eyebrow>no drops yet</Eyebrow>
+          <p className="mono" style={{ fontSize: 13, color: "var(--color-ink-2)", margin: "10px 0 16px" }}>
+            {orgName ? `${orgName}, create your first on-sale to start.` : "Create your first on-sale to start."}
+          </p>
+          <button className="btn btn-primary focusable" onClick={() => setShowCreate(true)}>+ new drop</button>
+        </div>
+      )}
 
       {/* KPI row — the B2B headline numbers */}
       <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))", marginBottom: 18 }}>
@@ -419,7 +448,7 @@ function CreateDrop({
     });
     const d = await res.json();
     setBusy(false);
-    if (d.ok) onCreated(d.event_id, { id: d.event_id, title: d.title, capacity, price });
+    if (d.ok) onCreated(d.event_id, { id: d.event_id, title: d.title, capacity, price, organizer: orgName ?? undefined });
   }
 
   const OPEN_OPTS: { key: "now" | "1m" | "5m" | "custom"; label: string }[] = [
