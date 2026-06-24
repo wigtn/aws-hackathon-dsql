@@ -5,7 +5,7 @@
 // ============================================================================
 import { q, PRIMARY } from "./dsql";
 import { isOccError } from "@/lib/occ";
-import { recordAllocation } from "@/lib/fairness";
+import { fingerprint, type Allocation } from "@/lib/fairness";
 import { store, embedQuery } from "@/lib/sim/store";
 import { haversineKm } from "@/lib/discovery";
 import { ClaimResult, EventRow, RegionId, SeatRow, SeatStatus } from "@/lib/sim/types";
@@ -113,10 +113,28 @@ function ensureReady() {
   }
   return readyPromise;
 }
+// FR-A1/F1: the demo catalog stores sale_opens_at as absolute ms computed from
+// now-relative offsets at seed time. Because the seed is one-time, those times
+// freeze and every "upcoming" drop drifts into the past (countdown UX dies, the
+// pre-sale guard never fires). Re-anchor the seeded catalog to the current
+// process clock on each cold start — bounded to the known ids, so organizer
+// custom drops (real opens_at) are never touched.
+async function reanchorCatalog() {
+  const s = store();
+  for (const ev of s.events) {
+    const slot = s.slots.get(ev.id);
+    await q(PRIMARY, "UPDATE events SET sale_opens_at=$1 WHERE id=$2", [ev.sale_opens_at, ev.id]).catch(() => {});
+    if (slot) await q(PRIMARY, "UPDATE drop_slots SET sale_opens_at=$1 WHERE id=$2", [slot.sale_opens_at, slot.id]).catch(() => {});
+  }
+}
+
 async function init() {
   try {
     const r = await q(PRIMARY, "SELECT count(*)::int AS n FROM events");
-    if (r.rows[0].n > 0) return; // already seeded
+    if (r.rows[0].n > 0) {
+      await reanchorCatalog(); // refresh frozen demo timestamps (F1)
+      return;
+    }
   } catch {
     /* events table absent → create everything below */
   }
@@ -255,7 +273,8 @@ export const dsqlData: Data = {
       try {
         const upd = await q(region, `UPDATE seats SET buyer_id=$1, status='held', version=version+1, region=$2, claimed_at=$3, hold_expires_at=$4 WHERE slot_id=$5 AND seat_no=$6 AND version=$7 AND status='open' AND buyer_id IS NULL`, [buyerId, region, now, now + 120_000, slotId, cand.seat_no, cand.version]);
         if (upd.rowCount === 1) {
-          recordAllocation(eventId, Number(cand.seat_no), buyerId, region);
+          // fairness chain is projected from the seats table on read — no
+          // separate append needed (the ledger IS the authoritative order).
           const rem = await q(region, `SELECT count(*)::int AS n FROM seats WHERE slot_id=$1 AND status='open' AND buyer_id IS NULL`, [slotId]);
           return { ok: true, seat_no: Number(cand.seat_no), region, attempts: attempt, oc000, latency_ms: Date.now() - t0, remaining_open: rem.rows[0].n };
         }
@@ -318,6 +337,18 @@ export const dsqlData: Data = {
     for (const row of cr.rows) bySlot.set(String(row.slot_id), Number(row.n));
     for (const id of eventIds) out[id] = bySlot.get(SLOT(id)) ?? 0;
     return out;
+  },
+
+  async fairnessAllocations(eventId: string): Promise<Allocation[]> {
+    await ensureReady();
+    // strict commit order straight from the strongly-consistent seat ledger
+    const r = await q(PRIMARY, `SELECT seat_no, region, buyer_id, claimed_at FROM seats WHERE slot_id=$1 AND buyer_id IS NOT NULL AND claimed_at IS NOT NULL ORDER BY claimed_at ASC, seat_no ASC`, [SLOT(eventId)]);
+    return r.rows.map((row) => ({
+      seat_no: Number(row.seat_no),
+      region: String(row.region ?? "us-east-1"),
+      buyer_fingerprint: fingerprint(String(row.buyer_id)),
+      committed_at: Number(row.claimed_at),
+    }));
   },
 
   async metrics(eventId) {

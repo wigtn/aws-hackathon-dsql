@@ -10,9 +10,12 @@
 // audit (2026 anti-scalping legislation). Tampering with any entry breaks the
 // chain from that point on — visible in the verifier.
 //
-// NOTE (honesty): this in-memory ledger is an audit *projection* rebuilt from
-// claims within a process. In production it persists to the append-only
-// events_log on DSQL (PRD §4.1). The hashing/verification is identical.
+// The chain is a deterministic PROJECTION of the seat ledger: the route feeds
+// it the allocations read straight from the strongly-consistent store (DSQL on
+// the real plane, the in-memory ledger on sim) ordered by commit time, so the
+// verifier is consistent across serverless instances — it doesn't depend on
+// per-process state. The in-memory recordAllocation/verifyChain below remain
+// for standalone/test use; verifyAllocations is the projection entrypoint.
 // ============================================================================
 import { createHash } from "node:crypto";
 
@@ -79,18 +82,25 @@ export interface FairnessReport {
   entries: FairnessEntry[];
 }
 
-/**
- * Recompute and verify the whole chain. If `tamperAt` (a seq) is provided, we
- * mutate a COPY of that entry to demonstrate detection — the stored ledger is
- * never modified.
- */
-export function verifyChain(eventId: string, tamperAt?: number): FairnessReport {
-  const original = ledger().get(eventId) ?? [];
-  // work on a copy; optionally corrupt one entry's seat_no to demo tampering
+// One allocation as read from the seat ledger (no PII — fingerprint only).
+export interface Allocation {
+  seat_no: number;
+  region: string;
+  buyer_fingerprint: string;
+  committed_at: number;
+}
+
+/** sha256(buyerId)[:12] — the non-PII identity used throughout the chain. */
+export function fingerprint(buyerId: string): string {
+  return sha256(buyerId).slice(0, 12);
+}
+
+// Verify a chain (with optional tamper-on-a-copy demo). Shared by both the
+// in-memory and ledger-projection entrypoints.
+function reportFor(original: FairnessEntry[], tamperAt?: number): FairnessReport {
   const chain: FairnessEntry[] = original.map((e) =>
     tamperAt && e.seq === tamperAt ? { ...e, seat_no: e.seat_no + 1 } : { ...e },
   );
-
   let verified = true;
   let brokenAt: number | null = null;
   let prevHash = GENESIS;
@@ -105,6 +115,41 @@ export function verifyChain(eventId: string, tamperAt?: number): FairnessReport 
     prevHash = e.hash;
   }
   return { count: chain.length, verified, broken_at: brokenAt, regions, entries: chain };
+}
+
+/**
+ * Build the canonical hash chain from ledger-ordered allocations, then verify.
+ * This is the production path: the allocations come from the strongly-consistent
+ * seat ledger, so the result is identical on every instance. `tamperAt` mutates
+ * a COPY to demonstrate detection — the inputs are never modified.
+ */
+export function verifyAllocations(
+  eventId: string,
+  allocs: Allocation[],
+  tamperAt?: number,
+): FairnessReport {
+  const built: FairnessEntry[] = [];
+  let prevHash = GENESIS;
+  allocs.forEach((a, i) => {
+    const base: Omit<FairnessEntry, "hash"> = {
+      seq: i + 1,
+      event_id: eventId,
+      seat_no: a.seat_no,
+      region: a.region,
+      buyer_fingerprint: a.buyer_fingerprint,
+      committed_at: a.committed_at,
+      prev_hash: prevHash,
+    };
+    const hash = entryHash(base);
+    built.push({ ...base, hash });
+    prevHash = hash;
+  });
+  return reportFor(built, tamperAt);
+}
+
+/** In-memory variant (standalone/test). */
+export function verifyChain(eventId: string, tamperAt?: number): FairnessReport {
+  return reportFor(ledger().get(eventId) ?? [], tamperAt);
 }
 
 export function resetFairness(eventId: string) {
