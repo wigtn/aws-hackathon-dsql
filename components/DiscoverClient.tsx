@@ -35,6 +35,7 @@ export function DiscoverClient() {
   const [radius, setRadius] = useState(50);
   const [q, setQ] = useState("");
   const [results, setResults] = useState<Result[]>([]);
+  const [plane, setPlane] = useState("");
   const [loading, setLoading] = useState(true);
   const [usingGeo, setUsingGeo] = useState(false);
 
@@ -49,6 +50,7 @@ export function DiscoverClient() {
     const res = await fetch(`/api/discover?${params}`);
     const data = await res.json();
     setResults(data.results ?? []);
+    setPlane(data.plane ?? "");
     setLoading(false);
   }, [loc, radius, q]);
 
@@ -148,7 +150,9 @@ export function DiscoverClient() {
           {loading ? "querying…" : `${results.length} drops`}
           {q ? " · ranked by meaning" : " · ranked by distance"}
         </div>
-        <div className="eyebrow">live stock joined from DSQL ledger</div>
+        <div className="eyebrow" title="discovery ranks on Aurora PostgreSQL; live stock joins from the DSQL seat ledger">
+          {plane || "discovery plane"} · stock from DSQL
+        </div>
       </div>
 
       {!loading && results.length === 0 ? (

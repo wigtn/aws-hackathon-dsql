@@ -56,3 +56,75 @@ aws dsql delete-cluster --region us-east-2 --identifier 5rt32vy2c7qvvcptxzxsjjwi
 
 > DSQL is serverless (pay per request + storage) — idle cost is negligible, but
 > delete after the submission video is recorded to be safe.
+
+---
+
+# AWS — Aurora PostgreSQL (discovery plane)
+
+The **second** database, by deliberate design. DSQL gives strong-consistent
+cross-region writes but does **not** support PostGIS or pgvector — so geo radius
+search and semantic ranking force a real Postgres (CLAUDE.md §4, PRD §5). This is
+the dual-DB justification made literal, and the second AWS-DB submission screenshot.
+
+## Provision (Aurora PostgreSQL Serverless v2)
+
+Use an existing default VPC's subnets + a security group that allows inbound 5432
+from your IP (or run the script from inside the VPC). PostGIS + pgvector ship with
+Aurora PostgreSQL 15.4+/16.x — no extra setup beyond `CREATE EXTENSION`.
+
+```bash
+REGION=us-east-1
+# 1. subnet group (two AZs from your default VPC)
+aws rds create-db-subnet-group --region $REGION \
+  --db-subnet-group-name openslot-pg --db-subnet-group-description "openslot discovery" \
+  --subnet-ids <subnet-az-a> <subnet-az-b>
+
+# 2. serverless v2 cluster (0.5–2 ACU is plenty for the demo)
+aws rds create-db-cluster --region $REGION \
+  --db-cluster-identifier openslot-pg --engine aurora-postgresql --engine-version 16.4 \
+  --master-username openslot --master-user-password '<STRONG_PW>' \
+  --db-subnet-group-name openslot-pg --vpc-security-group-ids <sg-id> \
+  --serverless-v2-scaling-configuration MinCapacity=0.5,MaxCapacity=2
+
+# 3. one writer instance
+aws rds create-db-instance --region $REGION \
+  --db-instance-identifier openslot-pg-1 --db-cluster-identifier openslot-pg \
+  --engine aurora-postgresql --db-instance-class db.serverless
+
+# 4. wait, then read the writer endpoint
+aws rds describe-db-clusters --region $REGION --db-cluster-identifier openslot-pg \
+  --query 'DBClusters[0].Endpoint' --output text
+```
+
+## Setup + proof (the screenshot)
+
+```bash
+export AURORA_PG_URL='postgresql://openslot:<PW>@<writer-endpoint>:5432/postgres'
+node scripts/pg-setup.mjs
+# CREATE EXTENSION postgis + vector → events(venue_geom geography, embedding vector(12))
+#   with GiST + HNSW(vector_cosine_ops) indexes → seeds the catalog → then proves:
+#   PROOF A  ST_DWithin(≤50 km of Seoul) returns Seoul events, excludes NYC SNKRS
+#   PROOF B  embedding <=> "indie show this weekend near me" ranks Slow Static #1
+# → RESULT: PASS. Screenshot the extension versions + both proof tables.
+```
+
+## App wiring
+
+```
+AURORA_PG_URL=postgresql://openslot:<PW>@<writer-endpoint>:5432/postgres
+```
+
+With this set, `/api/discover` runs real PostGIS + pgvector (`lib/db/pg-discovery.ts`)
+and reports `plane: "aurora-postgresql · postgis + pgvector"`; live seat stock is
+JOINed from the DSQL ledger. Unset → discovery falls back to the deterministic
+model and the API honestly reports `plane: "simulation"` (no false real-plane claim).
+
+## Teardown (after the demo)
+
+```bash
+aws rds delete-db-instance --region us-east-1 --db-instance-identifier openslot-pg-1 --skip-final-snapshot
+aws rds delete-db-cluster  --region us-east-1 --db-cluster-identifier openslot-pg --skip-final-snapshot
+```
+
+> Serverless v2 bills per ACU-hour — min 0.5 ACU runs ~24/7 while the cluster
+> exists. Delete the instance + cluster once the screenshot/video are captured.
