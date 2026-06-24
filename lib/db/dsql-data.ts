@@ -307,6 +307,19 @@ export const dsqlData: Data = {
     return { holds: h.rowCount ?? 0, offers: o.rowCount ?? 0 };
   },
 
+  async remainingFor(eventIds: string[]): Promise<Record<string, number>> {
+    await ensureReady();
+    const out: Record<string, number> = {};
+    if (!eventIds.length) return out;
+    // one bounded query for exactly the ranked ids (≤ top-K), not the catalog
+    const slotIds = eventIds.map((id) => SLOT(id));
+    const cr = await q(PRIMARY, `SELECT slot_id, count(*)::int AS n FROM seats WHERE slot_id = ANY($1) AND status='open' AND buyer_id IS NULL GROUP BY slot_id`, [slotIds]);
+    const bySlot = new Map<string, number>();
+    for (const row of cr.rows) bySlot.set(String(row.slot_id), Number(row.n));
+    for (const id of eventIds) out[id] = bySlot.get(SLOT(id)) ?? 0;
+    return out;
+  },
+
   async metrics(eventId) {
     await ensureReady();
     const ev = await this.eventById(eventId);
