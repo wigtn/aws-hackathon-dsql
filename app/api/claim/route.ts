@@ -36,18 +36,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(r, { status: httpStatus });
     }
     case "confirm": {
-      const ok = await data.confirm(eventId, seatNo!, buyerId);
+      if (!buyerId || typeof seatNo !== "number")
+        return NextResponse.json({ error: "buyerId and seatNo required" }, { status: 400 });
+      const ok = await data.confirm(eventId, seatNo, buyerId);
       return NextResponse.json({ ok }, { status: ok ? 200 : 409 });
     }
     case "cancel": {
-      const r = await data.cancelReoffer(eventId, seatNo!, buyerId);
+      if (!buyerId || typeof seatNo !== "number")
+        return NextResponse.json({ error: "buyerId and seatNo required" }, { status: 400 });
+      const r = await data.cancelReoffer(eventId, seatNo, buyerId);
       return NextResponse.json(r, { status: r.ok ? 200 : 409 });
     }
     case "waitlist": {
+      if (!buyerId) return NextResponse.json({ error: "buyerId required" }, { status: 400 });
       const r = await data.waitlistJoin(eventId, buyerId);
       return NextResponse.json(r);
     }
     case "sweep": {
+      // hold/offer cleanup is a cron job, not a public mutation (FR-A5/M5).
+      const secret = process.env.OPENSLOT_CRON_SECRET;
+      if (secret && req.headers.get("x-openslot-cron") !== secret)
+        return NextResponse.json({ error: "forbidden" }, { status: 403 });
       const swept = await data.sweep(eventId);
       return NextResponse.json({ ok: true, ...swept });
     }

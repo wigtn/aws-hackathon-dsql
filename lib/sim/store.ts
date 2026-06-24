@@ -240,7 +240,8 @@ export function createDrop(input: {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 24);
-  const id = `ev-custom-${s.events.length + 1}-${slug || "drop"}`;
+  // ID scheme parity with the DSQL backend (avoids length-based collisions)
+  const id = `ev-custom-${t.toString(36)}-${slug || "drop"}`;
   const ev: EventRow = {
     id,
     organizer_id: "org-you",

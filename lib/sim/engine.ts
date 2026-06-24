@@ -122,7 +122,8 @@ export class SeatLedger {
         s.buyer_id === buyerId &&
         (s.status === "held" ||
           s.status === "confirmed" ||
-          s.status === "activated"),
+          s.status === "activated" ||
+          s.status === "sold"),
     );
   }
 

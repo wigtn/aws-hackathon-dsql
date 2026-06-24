@@ -185,7 +185,6 @@ export function runStampede(
 
   const allLat = commitLatencies.slice().sort((x, y) => x - y);
   const granted = agents.filter((a) => a.won).length;
-  const counts = ledger.statusCounts(p.slotId);
   const oversold = Math.max(0, granted - p.capacity); // structurally 0
 
   // histogram over commit latencies (8 buckets)
@@ -218,7 +217,5 @@ export function runStampede(
     regions,
     histogram,
     winners: winners.length ? winners : [],
-    // confirmed+sold should equal granted — a sanity tie-out for the UI
-    ...(counts ? {} : {}),
   };
 }
