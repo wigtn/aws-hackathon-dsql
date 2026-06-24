@@ -5,6 +5,7 @@
 // ============================================================================
 import { q, PRIMARY } from "./dsql";
 import { isOccError } from "@/lib/occ";
+import { recordAllocation } from "@/lib/fairness";
 import { store, embedQuery } from "@/lib/sim/store";
 import { haversineKm } from "@/lib/discovery";
 import { ClaimResult, EventRow, RegionId, SeatRow, SeatStatus } from "@/lib/sim/types";
@@ -254,6 +255,7 @@ export const dsqlData: Data = {
       try {
         const upd = await q(region, `UPDATE seats SET buyer_id=$1, status='held', version=version+1, region=$2, claimed_at=$3, hold_expires_at=$4 WHERE slot_id=$5 AND seat_no=$6 AND version=$7 AND status='open' AND buyer_id IS NULL`, [buyerId, region, now, now + 120_000, slotId, cand.seat_no, cand.version]);
         if (upd.rowCount === 1) {
+          recordAllocation(eventId, Number(cand.seat_no), buyerId, region);
           const rem = await q(region, `SELECT count(*)::int AS n FROM seats WHERE slot_id=$1 AND status='open' AND buyer_id IS NULL`, [slotId]);
           return { ok: true, seat_no: Number(cand.seat_no), region, attempts: attempt, oc000, latency_ms: Date.now() - t0, remaining_open: rem.rows[0].n };
         }

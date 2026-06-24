@@ -15,6 +15,7 @@ import { discover as simDiscover, DiscoveryParams, DiscoveryResult } from "@/lib
 import { ClaimResult, EventRow, RegionId, SeatRow, SeatStatus, Slot } from "@/lib/sim/types";
 import { DATA_PLANE } from "@/lib/db";
 import { dsqlData } from "@/lib/db/dsql-data";
+import { recordAllocation } from "@/lib/fairness";
 
 // Public seat shape — NO buyer_id / reserved_for (PII). Surfaces only what the
 // seat map and organizer floor need: status + occupied/reserved booleans (FR-A4).
@@ -161,7 +162,9 @@ const sim: Data = {
   },
   async claim(eventId, buyerId, region) {
     const slot = simSlotForEvent(eventId)!;
-    return store().ledger.claim(slot.id, buyerId, region);
+    const r = store().ledger.claim(slot.id, buyerId, region);
+    if (r.ok && r.seat_no != null) recordAllocation(eventId, r.seat_no, buyerId, region);
+    return r;
   },
   async confirm(eventId, seatNo, buyerId) {
     const slot = simSlotForEvent(eventId)!;
