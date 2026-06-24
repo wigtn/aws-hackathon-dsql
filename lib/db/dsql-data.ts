@@ -9,7 +9,7 @@ import { store, embedQuery } from "@/lib/sim/store";
 import { haversineKm } from "@/lib/discovery";
 import { ClaimResult, EventRow, RegionId, SeatRow, SeatStatus } from "@/lib/sim/types";
 import type { DiscoveryParams, DiscoveryResult } from "@/lib/discovery";
-import type { CreateDropInput, Data, Metrics, MyTicket, Snapshot } from "@/lib/data";
+import type { CreateDropInput, Data, Metrics, MyTicket, PublicSeat, Snapshot } from "@/lib/data";
 
 // ---- local helpers (kept here to avoid a runtime import cycle with data.ts) -
 function hashSeed(s: string): number {
@@ -82,7 +82,8 @@ async function insertSeats(slotId: string, specs: ReturnType<typeof genSeats>) {
       vals.push(`($${b + 1},$${b + 2},$${b + 3},$${b + 4},$${b + 5},'open',1)`);
       params.push(s.id, slotId, s.seat_no, s.section, s.row_label);
     });
-    await q(PRIMARY, `INSERT INTO seats (id,slot_id,seat_no,section,row_label,status,version) VALUES ${vals.join(",")}`, params);
+    await q(PRIMARY, `INSERT INTO seats (id,slot_id,seat_no,section,row_label,status,version) VALUES ${vals.join(",")}`, params)
+      .catch((e) => { if (!/duplicate|already exists|unique/i.test((e as Error).message)) throw e; });
   }
 }
 async function insertEvent(ev: EventRow) {
@@ -95,9 +96,20 @@ async function insertEvent(ev: EventRow) {
 }
 
 // ---- one-time schema + seed (guarded; persists across cold starts) ----------
+// FR-A3: NO destructive DROP here (scripts/dsql-migrate.mjs owns that, once).
+// Multi-instance safe via a single-seeder election on seed_marker; a rejected
+// init is never cached (else every later request fails forever).
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const isDup = (e: unknown) => /duplicate|already exists|unique/i.test((e as Error)?.message ?? "");
+
 let readyPromise: Promise<void> | null = null;
 function ensureReady() {
-  if (!readyPromise) readyPromise = init();
+  if (!readyPromise) {
+    readyPromise = init().catch((e) => {
+      readyPromise = null; // do not cache a rejection (FR-A3 永久독 방지)
+      throw e;
+    });
+  }
   return readyPromise;
 }
 async function init() {
@@ -107,7 +119,8 @@ async function init() {
   } catch {
     /* events table absent → create everything below */
   }
-  await q(PRIMARY, "DROP TABLE IF EXISTS seats").catch(() => {}); // clear any incompatible proof table
+  // idempotent schema (all IF NOT EXISTS; never drops)
+  await q(PRIMARY, `CREATE TABLE IF NOT EXISTS seed_marker (id text PRIMARY KEY)`).catch(() => {});
   await q(PRIMARY, `CREATE TABLE IF NOT EXISTS events (
     id text PRIMARY KEY, organizer_id text, organizer_name text, title text, subtitle text,
     category text, venue text, city text, country text, lat double precision, lng double precision,
@@ -116,21 +129,44 @@ async function init() {
     id text PRIMARY KEY, event_id text, capacity int, sale_opens_at bigint)`);
   await q(PRIMARY, `CREATE TABLE IF NOT EXISTS waitlist (
     id text PRIMARY KEY, slot_id text, buyer_id text, position int, created_at bigint)`);
-  await q(PRIMARY, `CREATE TABLE seats (
+  await q(PRIMARY, `CREATE TABLE IF NOT EXISTS seats (
     id text PRIMARY KEY, slot_id text NOT NULL, seat_no int NOT NULL, section text, row_label text,
     buyer_id text, status text NOT NULL DEFAULT 'open', version int NOT NULL DEFAULT 1, region text,
     reserved_for text, reserved_until bigint, hold_expires_at bigint, claimed_at bigint)`);
   await q(PRIMARY, "CREATE UNIQUE INDEX ASYNC ux_seat_app ON seats (slot_id, seat_no)")
-    .catch((e) => { if (!/already exists/i.test(e.message)) throw e; });
+    .catch((e) => { if (!/already exists/i.test((e as Error).message)) throw e; });
 
-  // seed catalog + ledger from the canonical in-memory seed
-  const s = store();
-  for (const ev of s.events) {
-    await insertEvent(ev);
-    const slot = s.slots.get(ev.id)!;
-    await q(PRIMARY, "INSERT INTO drop_slots (id,event_id,capacity,sale_opens_at) VALUES ($1,$2,$3,$4)", [slot.id, ev.id, slot.capacity, slot.sale_opens_at]).catch(() => {});
-    await insertSeats(slot.id, genSeats(slot.id, slot.capacity));
+  // single-seeder election: the instance that wins the PK INSERT seeds; others poll.
+  let iAmSeeder = false;
+  try {
+    await q(PRIMARY, "INSERT INTO seed_marker (id) VALUES ('v1')");
+    iAmSeeder = true;
+  } catch (e) {
+    if (!isDup(e)) throw e; // someone else seeding → fall through to poll
   }
+
+  if (iAmSeeder) {
+    const s = store();
+    for (const ev of s.events) {
+      await insertEvent(ev);
+      const slot = s.slots.get(ev.id)!;
+      await q(PRIMARY, "INSERT INTO drop_slots (id,event_id,capacity,sale_opens_at) VALUES ($1,$2,$3,$4)", [slot.id, ev.id, slot.capacity, slot.sale_opens_at]).catch((e) => { if (!isDup(e)) throw e; });
+      await insertSeats(slot.id, genSeats(slot.id, slot.capacity));
+    }
+    return;
+  }
+
+  // not the seeder → poll until the seeder finishes (500ms × 30 = 15s)
+  for (let i = 0; i < 30; i++) {
+    await sleep(500);
+    try {
+      const r = await q(PRIMARY, "SELECT count(*)::int AS n FROM events");
+      if (r.rows[0].n > 0) return;
+    } catch {
+      /* keep polling */
+    }
+  }
+  throw new Error("DSQL seed timed out waiting for the seeder");
 }
 
 const SLOT = (eventId: string) => `slot-${eventId}`;
@@ -181,14 +217,23 @@ export const dsqlData: Data = {
     const slot = await this.slotForEvent(eventId);
     if (!slot) return null;
     const now = Date.now();
-    const r = await q(PRIMARY, "SELECT * FROM seats WHERE slot_id=$1 ORDER BY seat_no", [slot.id]);
-    const seats = r.rows as unknown as SeatRow[];
+    const r = await q(PRIMARY, "SELECT seat_no, section, row_label, status, buyer_id, reserved_for, reserved_until FROM seats WHERE slot_id=$1 ORDER BY seat_no", [slot.id]);
     const counts = { open: 0, held: 0, confirmed: 0, activated: 0, released: 0, sold: 0 } as Record<SeatStatus, number>;
     let remaining = 0;
-    for (const s of seats) {
+    const seats: PublicSeat[] = r.rows.map((s) => {
       counts[s.status as SeatStatus] = (counts[s.status as SeatStatus] ?? 0) + 1;
+      const reserved = s.reserved_for != null && Number(s.reserved_until) > now;
       if (s.status === "open" && !s.buyer_id && (s.reserved_for == null || Number(s.reserved_until) < now)) remaining++;
-    }
+      // PII-masked: no buyer_id / reserved_for in the response (FR-A4)
+      return {
+        seat_no: Number(s.seat_no),
+        section: s.section,
+        row_label: s.row_label,
+        status: s.status as SeatStatus,
+        occupied: s.buyer_id != null,
+        reserved,
+      };
+    });
     return { capacity: slot.capacity, remaining_open: remaining, counts, seats, sale_opens_at: slot.sale_opens_at };
   },
 

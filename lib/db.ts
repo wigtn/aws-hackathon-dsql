@@ -11,11 +11,31 @@
 // SIMULATION that reproduces DSQL's OCC / strong-consistency semantics exactly
 // (see lib/sim/*). The real adapters activate automatically when the env vars
 // below are present, with NO call-site changes — the ledger SQL is a 1:1
-// translation of SeatLedger.commitClaim wrapped in lib/occ.withOccRetry.
+// translation of SeatLedger.commitClaim. The DSQL claim uses a single-statement
+// conditional UPDATE (its own valid form of OCC): a lost race returns rowCount=0
+// and is retried; OC000 is thrown only on same-row contention. withOccRetry
+// (lib/occ.ts) is available for multi-statement transactions; the proof script
+// (scripts/dsql-setup.mjs) exercises real OC000 under a barrier stampede.
 // ============================================================================
 
 export const DATA_PLANE: "aurora" | "simulation" =
   process.env.DSQL_ENDPOINT_US_EAST_1 ? "aurora" : "simulation";
+
+// Multi-region is real ONLY when BOTH regional endpoints are configured. We
+// never silently degrade: when only one endpoint is set, the app still works
+// but every surface reports region_mode="single" honestly (FR-A1 / PRD §9 C-2).
+export const MULTI_REGION: boolean = !!(
+  process.env.DSQL_ENDPOINT_US_EAST_1 && process.env.DSQL_ENDPOINT_US_EAST_2
+);
+export const REGION_MODE: "multi" | "single" | "simulation" =
+  DATA_PLANE !== "aurora" ? "simulation" : MULTI_REGION ? "multi" : "single";
+
+export function activeRegions(): ("us-east-1" | "us-east-2")[] {
+  const r: ("us-east-1" | "us-east-2")[] = [];
+  if (process.env.DSQL_ENDPOINT_US_EAST_1) r.push("us-east-1");
+  if (process.env.DSQL_ENDPOINT_US_EAST_2) r.push("us-east-2");
+  return r.length ? r : ["us-east-1"];
+}
 
 export interface DsqlConfig {
   endpointEast1?: string; // us-east-1 regional endpoint

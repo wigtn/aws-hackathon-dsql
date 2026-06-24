@@ -13,7 +13,7 @@ interface EvOpt {
 interface Seat {
   seat_no: number;
   status: string;
-  reserved_for: string | null;
+  reserved: boolean;
 }
 interface Snapshot {
   capacity: number;
@@ -217,8 +217,8 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
               <Meter value={filled} max={snap.capacity} hot={snap.remaining_open === 0} />
               <div className="grid gap-1" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(22px,1fr))", marginTop: 14 }}>
                 {snap.seats.slice(0, 120).map((s) => (
-                  <div key={s.seat_no} className="seat" data-status={s.reserved_for ? "held" : s.status} style={{ fontSize: 7 }} title={s.reserved_for ? `locked offer → ${s.reserved_for}` : s.status}>
-                    {s.reserved_for ? "★" : ""}
+                  <div key={s.seat_no} className="seat" data-status={s.reserved ? "held" : s.status} style={{ fontSize: 7 }} title={s.reserved ? "locked offer (#1 waitlister)" : s.status}>
+                    {s.reserved ? "★" : ""}
                   </div>
                 ))}
               </div>

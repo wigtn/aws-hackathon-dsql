@@ -16,11 +16,33 @@ import { ClaimResult, EventRow, RegionId, SeatRow, SeatStatus, Slot } from "@/li
 import { DATA_PLANE } from "@/lib/db";
 import { dsqlData } from "@/lib/db/dsql-data";
 
+// Public seat shape — NO buyer_id / reserved_for (PII). Surfaces only what the
+// seat map and organizer floor need: status + occupied/reserved booleans (FR-A4).
+export interface PublicSeat {
+  seat_no: number;
+  section: string;
+  row_label: string;
+  status: SeatStatus;
+  occupied: boolean;
+  reserved: boolean;
+}
+
+export function toPublicSeat(s: SeatRow, now = Date.now()): PublicSeat {
+  return {
+    seat_no: s.seat_no,
+    section: s.section,
+    row_label: s.row_label,
+    status: s.status,
+    occupied: s.buyer_id != null,
+    reserved: s.reserved_for != null && (s.reserved_until ?? 0) > now,
+  };
+}
+
 export interface Snapshot {
   capacity: number;
   remaining_open: number;
   counts: Record<SeatStatus, number>;
-  seats: SeatRow[];
+  seats: PublicSeat[];
   sale_opens_at: number;
 }
 
@@ -128,11 +150,12 @@ const sim: Data = {
     const slot = simSlotForEvent(eventId);
     if (!slot) return null;
     const s = store();
+    const now = Date.now();
     return {
       capacity: slot.capacity,
       remaining_open: s.ledger.remainingOpen(slot.id),
       counts: s.ledger.statusCounts(slot.id),
-      seats: s.ledger.snapshot(slot.id),
+      seats: s.ledger.snapshot(slot.id).map((seat) => toPublicSeat(seat, now)),
       sale_opens_at: slot.sale_opens_at,
     };
   },

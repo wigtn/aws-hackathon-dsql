@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { SeatLedger } from "@/lib/sim/engine";
 import { runStampede } from "@/lib/sim/demo";
 import { Slot } from "@/lib/sim/types";
+import { REGION_MODE } from "@/lib/db";
 
 // POST /api/demo/run  { capacity, buyers, seed }
 // Builds an ISOLATED, freshly-seeded ledger (reproducible by seed) and fires a
@@ -43,7 +44,13 @@ export async function POST(req: NextRequest) {
       regions: ["us-east-1 (N. Virginia)", "us-east-2 (Ohio)"],
       witness: "us-west-2 (Oregon) · quorum tiebreaker, no endpoint",
       isolation: "snapshot · OCC (OC000 on conflict)",
-      data_plane: process.env.DSQL_ENDPOINT ? "aurora-dsql" : "simulation",
+      // This endpoint is ALWAYS a deterministic in-memory load generator (it
+      // models DSQL OCC at barrel-synchronized max contention). The live data
+      // plane backing the real app is reported separately; the real cross-region
+      // OC000 proof on Aurora DSQL is scripts/dsql-setup.mjs (FR-A2).
+      engine: "simulation (in-memory load generator)",
+      live_data_plane: REGION_MODE,
+      real_proof: "scripts/dsql-setup.mjs (live multi-region Aurora DSQL)",
     },
     result,
   });
