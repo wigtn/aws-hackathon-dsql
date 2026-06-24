@@ -6,48 +6,11 @@
 
 import { SeatLedger } from "./engine";
 import { EventRow, Slot, WaitlistEntry } from "./types";
+// Embedding space lives in one framework-free module shared with the PG
+// provisioning script, so seeded vectors and live queries can't drift (M3).
+import { embed, embedQuery } from "@/lib/embedding.mjs";
 
-// tiny semantic space — stands in for pgvector(1024). Each axis is a concept.
-const AXES = [
-  "kpop",
-  "rock",
-  "indie",
-  "pop",
-  "sports",
-  "sneakers",
-  "collectible",
-  "gaming",
-  "arena",
-  "club",
-  "weekend",
-  "global",
-] as const;
-type Axis = (typeof AXES)[number];
-
-function embed(weights: Partial<Record<Axis, number>>): number[] {
-  const v = AXES.map((a) => weights[a] ?? 0);
-  const norm = Math.hypot(...v) || 1;
-  return v.map((x) => x / norm);
-}
-
-export function embedQuery(q: string): number[] {
-  const t = q.toLowerCase();
-  const w: Partial<Record<Axis, number>> = {};
-  const add = (a: Axis, n = 1) => (w[a] = (w[a] ?? 0) + n);
-  if (/(k-?pop|bts|stray|seventeen|아이돌|케이팝)/.test(t)) add("kpop", 2), add("global");
-  if (/(rock|band|guitar|metal)/.test(t)) add("rock", 2);
-  if (/(indie|underground|small|alt)/.test(t)) add("indie", 2), add("club");
-  if (/(pop|stadium tour|eras)/.test(t)) add("pop", 2), add("arena");
-  if (/(sport|final|match|cup|league|nba|soccer|축구)/.test(t)) add("sports", 2);
-  if (/(sneaker|snkrs|nike|jordan|yeezy|드롭|drop)/.test(t)) add("sneakers", 2), add("collectible");
-  if (/(labubu|pop ?mart|figure|toy|collectible|tcg|pokemon|포켓몬)/.test(t)) add("collectible", 2), add("gaming");
-  if (/(ps5|console|gpu|gaming|game)/.test(t)) add("gaming", 2);
-  if (/(weekend|tonight|this week|주말|오늘)/.test(t)) add("weekend", 1.5);
-  if (/(arena|stadium|dome)/.test(t)) add("arena", 1);
-  if (/(club|venue|bar)/.test(t)) add("club", 1);
-  if (Object.keys(w).length === 0) add("pop"), add("global");
-  return embed(w);
-}
+export { embedQuery };
 
 const HOUR = 3_600_000;
 const MIN = 60_000;

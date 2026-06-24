@@ -10,6 +10,9 @@
 // (Provision the cluster first — see docs/AWS.md "Aurora PostgreSQL".)
 // ============================================================================
 import pg from "pg";
+// Same embedding logic the app uses — shared module, not a copy (review M3),
+// so PROOF B ranks with exactly the live query vectors.
+import { embed, embedQuery } from "../lib/embedding.mjs";
 
 const URL = process.env.AURORA_PG_URL;
 if (!URL) {
@@ -17,32 +20,6 @@ if (!URL) {
   process.exit(2);
 }
 
-// ---- embedding space — IDENTICAL to lib/sim/store.ts (the app's vectors) -----
-const AXES = ["kpop","rock","indie","pop","sports","sneakers","collectible","gaming","arena","club","weekend","global"];
-const embed = (w) => {
-  const v = AXES.map((a) => w[a] ?? 0);
-  const norm = Math.hypot(...v) || 1;
-  return v.map((x) => x / norm);
-};
-// faithful replica of embedQuery() so the proof ranks with the app's own logic
-const embedQuery = (q) => {
-  const t = q.toLowerCase();
-  const w = {};
-  const add = (a, n = 1) => (w[a] = (w[a] ?? 0) + n);
-  if (/(k-?pop|bts|stray|seventeen|아이돌|케이팝)/.test(t)) (add("kpop", 2), add("global"));
-  if (/(rock|band|guitar|metal)/.test(t)) add("rock", 2);
-  if (/(indie|underground|small|alt)/.test(t)) (add("indie", 2), add("club"));
-  if (/(pop|stadium tour|eras)/.test(t)) (add("pop", 2), add("arena"));
-  if (/(sport|final|match|cup|league|nba|soccer|축구)/.test(t)) add("sports", 2);
-  if (/(sneaker|snkrs|nike|jordan|yeezy|드롭|drop)/.test(t)) (add("sneakers", 2), add("collectible"));
-  if (/(labubu|pop ?mart|figure|toy|collectible|tcg|pokemon|포켓몬)/.test(t)) (add("collectible", 2), add("gaming"));
-  if (/(ps5|console|gpu|gaming|game)/.test(t)) add("gaming", 2);
-  if (/(weekend|tonight|this week|주말|오늘)/.test(t)) add("weekend", 1.5);
-  if (/(arena|stadium|dome)/.test(t)) add("arena", 1);
-  if (/(club|venue|bar)/.test(t)) add("club", 1);
-  if (Object.keys(w).length === 0) (add("pop"), add("global"));
-  return embed(w);
-};
 const vec = (arr) => `[${arr.join(",")}]`;
 
 // ---- catalog — same ids/coords/weights as the seat plane (join-compatible) ---
@@ -153,6 +130,11 @@ try {
     ? "\nRESULT: PASS — real PostGIS + pgvector on Aurora PostgreSQL. Screenshot this."
     : "\nRESULT: CHECK ABOVE");
   process.exitCode = pass ? 0 : 1;
+} catch (e) {
+  // surface which step failed (extension denied, no network, …) instead of a
+  // bare rejection — keeps the screenshot run debuggable (review m4)
+  console.error(`\nRESULT: ERROR — ${e.message}`);
+  process.exitCode = 1;
 } finally {
   await pool.end();
 }

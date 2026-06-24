@@ -26,16 +26,18 @@ export async function GET(req: NextRequest) {
   let plane: string;
 
   if (DISCOVERY_PLANE === "aurora-postgresql") {
-    // Real geo+semantic ranking from Aurora PG, then join live stock by event id.
+    // Real geo+semantic ranking from Aurora PG; join live stock for the ranked
+    // top-K only (bounded — never the whole catalog). Events with no seat-plane
+    // row surface as 0 open rather than being silently dropped (review M2/m1).
     const ranked = await pgDiscover(params);
-    const stock = await getData().discover({ limit: 10_000 });
-    const byId = new Map(stock.map((r) => [r.event.id, r]));
-    results = ranked
-      .map((pr) => {
-        const base = byId.get(pr.id);
-        return base ? { ...base, distance_km: pr.distance_km, score: pr.score } : null;
-      })
-      .filter((r): r is DiscoveryResult => r !== null);
+    const stock = await getData().remainingFor(ranked.map((r) => r.event.id));
+    const now = Date.now();
+    results = ranked.map((r) => {
+      const remaining_open = stock[r.event.id] ?? 0;
+      const status: DiscoveryResult["status"] =
+        r.event.sale_opens_at <= now ? (remaining_open > 0 ? "live" : "ended") : "soon";
+      return { event: r.event, distance_km: r.distance_km, score: r.score, remaining_open, status };
+    });
     plane = "aurora-postgresql · postgis + pgvector";
   } else {
     results = await getData().discover(params);

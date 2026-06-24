@@ -101,6 +101,10 @@ export interface Data {
   cancelReoffer(eventId: string, seatNo: number, buyerId: string): Promise<{ ok: boolean; reoffered_to: string | null }>;
   waitlistJoin(eventId: string, buyerId: string): Promise<{ ok: boolean; position: number }>;
   sweep(eventId: string): Promise<{ holds: number; offers: number }>;
+  // Bounded live-stock lookup for a known set of event ids — used by the real
+  // PG discovery path so it joins stock for the ranked top-K only, never the
+  // whole catalog (review M2).
+  remainingFor(eventIds: string[]): Promise<Record<string, number>>;
   metrics(eventId: string): Promise<Metrics | null>;
   myTickets(buyerId: string): Promise<{ tickets: MyTicket[]; waitlist: { event_id: string; title: string; position: number }[] }>;
   discover(p: DiscoveryParams): Promise<DiscoveryResult[]>;
@@ -189,6 +193,15 @@ const sim: Data = {
   async sweep(eventId) {
     const slot = simSlotForEvent(eventId)!;
     return store().ledger.sweep(slot.id);
+  },
+  async remainingFor(eventIds) {
+    const s = store();
+    const out: Record<string, number> = {};
+    for (const id of eventIds) {
+      const slot = simSlotForEvent(id);
+      out[id] = slot ? s.ledger.remainingOpen(slot.id) : 0;
+    }
+    return out;
   },
   async metrics(eventId) {
     const ev = simEventById(eventId);
