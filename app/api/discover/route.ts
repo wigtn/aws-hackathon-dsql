@@ -17,7 +17,11 @@ export async function GET(req: NextRequest) {
   });
 
   return NextResponse.json({
-    plane: "aurora-postgresql · postgis + pgvector",
+    // honest: real Aurora PG (PostGIS/pgvector) only when AURORA_PG_URL is set;
+    // otherwise this is the in-app discovery model (geo radius + semantic).
+    plane: process.env.AURORA_PG_URL
+      ? "aurora-postgresql · postgis + pgvector"
+      : "discovery model · geo radius + semantic (Aurora PG pending)",
     count: results.length,
     results,
   });
