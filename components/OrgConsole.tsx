@@ -25,6 +25,7 @@ interface EvOpt {
 }
 interface Seat {
   seat_no: number;
+  section: string;
   status: string;
   reserved: boolean;
 }
@@ -52,10 +53,11 @@ interface Metrics {
 
 const usd = (n: number) => "$" + Math.round(n).toLocaleString("en-US");
 
-function seatClass(s: Seat): string {
-  if (["confirmed", "activated", "sold"].includes(s.status)) return "stcell confirmed";
-  if (s.reserved || s.status === "held") return "stcell held";
-  return "stcell";
+// org floor renders the real venue shape (stage + sections), not a flat grid —
+// reuses the buyer seat-map's .pseat language. A reserved-for-#1 seat reads as
+// "held" so the fair re-offer is visible on the floor.
+function seatStatus(s: Seat): string {
+  return s.reserved && s.status === "open" ? "held" : s.status;
 }
 
 export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
@@ -237,15 +239,39 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
                 <h3>Your seat map</h3>
                 <span className="tag num">{filled} / {snap?.capacity ?? 0} sold</span>
               </div>
-              <div className="seatgrid">
-                {(snap?.seats ?? []).slice(0, 96).map((s) => (
-                  <div key={s.seat_no} className={seatClass(s)} title={s.status} />
-                ))}
-              </div>
-              <div className="seatlegend">
-                <span><i /> open</span>
-                <span><i className="held" /> on hold</span>
-                <span><i className="confirmed" /> sold</span>
+              {snap && snap.capacity === 1 ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "10px 0 4px" }}>
+                  <div className="pseat" data-status={seatStatus((snap.seats[0] ?? { seat_no: 1, section: "GA", status: "open", reserved: false }) as Seat)} style={{ width: 56, height: 56, fontSize: 13 }} />
+                  <div className="mono" style={{ fontSize: 12.5, color: "var(--pk-ink2)", lineHeight: 1.55 }}>
+                    {soldOut ? "The one seat is claimed — final, everywhere, instantly." : "One seat · whoever confirms first gets it. No double-book."}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between" style={{ margin: "2px 0 8px" }}>
+                    <span className="lbl" style={{ color: "var(--pk-ink2)" }}>Stage</span>
+                    <span className="lbl" style={{ color: "var(--pk-ink2)" }}>{snap?.remaining_open ?? 0} open</span>
+                  </div>
+                  <div style={{ height: 4, background: "var(--purple)", marginBottom: 6, borderRadius: 2 }} />
+                  {Array.from(new Set((snap?.seats ?? []).map((s) => s.section))).map((sec) => (
+                    <div key={sec}>
+                      <div className="section-h">{sec}</div>
+                      <div className="seatrow">
+                        {(snap?.seats ?? [])
+                          .filter((s) => s.section === sec)
+                          .slice(0, 60)
+                          .map((s) => (
+                            <div key={s.seat_no} className="pseat" data-status={seatStatus(s)} title={`${sec} ${s.seat_no} · ${s.status}`} />
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+              <div className="seatstat" style={{ marginTop: 16 }}>
+                <span className="s"><i /> open</span>
+                <span className="s"><i className="held" /> on hold</span>
+                <span className="s"><i className="sold" /> sold</span>
               </div>
               <div className="cmeter" style={{ marginTop: 16 }}>
                 <div className="fill" style={{ width: `${snap ? (filled / Math.max(1, snap.capacity)) * 100 : 0}%` }} />

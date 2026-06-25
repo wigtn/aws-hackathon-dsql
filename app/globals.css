@@ -224,14 +224,14 @@ body{ background:var(--cream); background-image:none; }
 .poster .btn-bright{ background:var(--bright); border-color:var(--bright); color:var(--pk-ink); font-weight:600; }
 .poster .btn-bright:hover{ background:#fff; border-color:#fff; }
 
-.poster .hero{ background:var(--purple); color:var(--cream); position:relative; overflow:hidden; border-radius:22px; margin:8px 0 0; padding:54px 48px 44px; }
-.poster .hero::after{ content:"OPEN"; position:absolute; right:-14px; bottom:-44px; font-family:var(--font-syne); font-weight:800; font-size:300px; line-height:1; color:rgba(255,255,255,.06); letter-spacing:-.04em; pointer-events:none; }
+.poster .hero{ background:var(--purple); color:var(--cream); position:relative; overflow:hidden; border-radius:22px; margin:8px 0 0; padding:46px 46px 42px; }
+.poster .hero::after{ content:"OPEN"; position:absolute; right:-14px; bottom:-38px; font-family:var(--font-syne); font-weight:800; font-size:230px; line-height:1; color:rgba(255,255,255,.06); letter-spacing:-.04em; pointer-events:none; }
 .poster .hero .top{ position:relative; z-index:2; display:flex; justify-content:space-between; align-items:flex-start; gap:20px; }
 .poster .hero .kick{ font-family:var(--font-mono); font-size:11.5px; letter-spacing:.2em; text-transform:uppercase; color:#e8dfff; }
 .poster .stat0{ text-align:right; }
-.poster .stat0 .n{ font-family:var(--font-syne); font-weight:800; font-size:84px; line-height:.8; letter-spacing:-.04em; }
+.poster .stat0 .n{ font-family:var(--font-syne); font-weight:800; font-size:64px; line-height:.8; letter-spacing:-.04em; }
 .poster .stat0 .l{ font-family:var(--font-mono); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:#e8dfff; margin-top:8px; }
-.poster .hero h1{ position:relative; z-index:2; font-family:var(--font-syne); font-weight:800; font-size:clamp(48px,8vw,116px); line-height:.9; letter-spacing:-.04em; text-transform:uppercase; margin:38px 0 0; max-width:14ch; }
+.poster .hero h1{ position:relative; z-index:2; font-family:var(--font-syne); font-weight:800; font-size:clamp(40px,4.6vw,72px); line-height:.92; letter-spacing:-.035em; text-transform:uppercase; margin:24px 0 0; max-width:18ch; }
 .poster .hero .lead{ position:relative; z-index:2; font-size:17px; color:rgba(255,255,255,.86); max-width:560px; margin-top:26px; line-height:1.55; }
 .poster .hero .lead b{ color:#fff; font-weight:600; }
 .poster .hero .acts{ position:relative; z-index:2; display:flex; gap:13px; align-items:center; margin-top:30px; flex-wrap:wrap; }
