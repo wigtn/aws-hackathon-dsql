@@ -89,6 +89,14 @@ export interface CreateDropInput {
   price: number;
   organizer_name?: string;
   opens_at?: number;
+  // Location set by the organizer (PRD §4.2): venue name + city + a map pin.
+  // Without these a drop is invisible to PostGIS radius discovery, so the
+  // create flow now captures them instead of hardcoding a default city.
+  venue?: string;
+  city?: string;
+  country?: string;
+  lat?: number;
+  lng?: number;
 }
 
 export interface Data {
