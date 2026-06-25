@@ -413,9 +413,9 @@ function CreateDrop({
   return (
     <div
       onClick={onClose}
-      style={{ position: "fixed", inset: 0, background: "color-mix(in srgb, var(--pk-ink) 45%, transparent)", display: "grid", placeItems: "center", zIndex: 50, padding: 20 }}
+      style={{ position: "fixed", inset: 0, background: "color-mix(in srgb, var(--pk-ink) 45%, transparent)", display: "grid", placeItems: "center", zIndex: 50, padding: 20, overflowY: "auto" }}
     >
-      <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--cream)", border: "2px solid var(--pk-ink)", borderRadius: 14, padding: 24, width: 520, maxWidth: "100%" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--cream)", border: "2px solid var(--pk-ink)", borderRadius: 14, padding: 24, width: 520, maxWidth: "100%", maxHeight: "calc(100dvh - 40px)", overflowY: "auto" }}>
         <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
           <div>
             <Eyebrow>new on-sale</Eyebrow>
@@ -449,9 +449,9 @@ function CreateDrop({
         </div>
 
         <label className="eyebrow" style={{ display: "block", marginTop: 14, marginBottom: 6 }}>location</label>
-        <div className="flex gap-3">
-          <input value={venue} onChange={(e) => setVenue(e.target.value)} placeholder="venue (e.g. KSPO Dome)" className="focusable" style={{ ...inp, marginTop: 0, flex: 1.4 }} />
-          <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="city" className="focusable" style={{ ...inp, marginTop: 0, flex: 1 }} />
+        <div className="flex flex-wrap gap-3">
+          <input value={venue} onChange={(e) => setVenue(e.target.value)} placeholder="venue (e.g. KSPO Dome)" className="focusable" style={{ ...inp, marginTop: 0, flex: 1.4, minWidth: 160 }} />
+          <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="city" className="focusable" style={{ ...inp, marginTop: 0, flex: 1, minWidth: 120 }} />
         </div>
         <div className="flex flex-wrap gap-2" style={{ marginTop: 8 }}>
           {CITY_PRESETS.map((p) => (

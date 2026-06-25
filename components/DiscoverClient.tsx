@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { distanceLabel, relTime } from "@/lib/format";
+import { distanceLabel, pad } from "@/lib/format";
 
 interface Result {
   event: {
@@ -99,7 +99,7 @@ export function DiscoverClient() {
                 ))}
               </select>
             </div>
-            <button onClick={useMyLocation} className="chip" style={{ alignSelf: "flex-end" }}>
+            <button onClick={useMyLocation} className={`chip${usingGeo ? " on" : ""}`} style={{ alignSelf: "flex-end" }}>
               {usingGeo ? "● located" : "Use my location"}
             </button>
           </div>
@@ -133,24 +133,38 @@ export function DiscoverClient() {
   );
 }
 
+// Live ticking badge for "soon" events — counts down to the on-sale time.
+function SoonCountdown({ target }: { target: number }) {
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  if (now === null) return <>on sale soon</>;
+  const d = target - now;
+  if (d <= 0) return <>on sale now</>;
+  const t = Math.floor(d / 1000);
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  const s = t % 60;
+  return <>on sale in {h > 0 ? `${h}h ${pad(m)}m` : `${pad(m)}:${pad(s)}`}</>;
+}
+
 function EventCard({ r }: { r: Result }) {
   const lastSeat = r.status === "live" && r.remaining_open === 1;
   const stateClass = r.status === "soon" ? "soon" : lastSeat ? "last" : r.status === "live" ? "live" : "last";
   const stateLabel =
-    r.status === "soon"
-      ? `on sale ${relTime(r.event.sale_opens_at)}`
-      : r.status === "ended"
-        ? "sold out"
-        : lastSeat
-          ? "last seat"
-          : "live";
+    r.status === "ended" ? "sold out" : lastSeat ? "last seat" : "live";
   const sold = r.status === "ended" || (r.status === "live" && r.remaining_open === 0);
   const price = r.event.price;
   return (
     <Link href={`/event/${r.event.id}`} className="ecard focusable" style={{ color: "inherit" }}>
       <div className="ct">
         <span className="cat">{r.event.category}</span>
-        <span className={`state ${stateClass}`}>{stateLabel}</span>
+        <span className={`state ${stateClass}`}>
+          {r.status === "soon" ? <SoonCountdown target={r.event.sale_opens_at} /> : stateLabel}
+        </span>
       </div>
       <h3>{r.event.title}</h3>
       <div className="venue">{r.event.venue} · {r.event.city}</div>
@@ -162,7 +176,7 @@ function EventCard({ r }: { r: Result }) {
         <span className="price">{price ? `from $${price}` : "free"}</span>
       </div>
       <div style={{ marginTop: 16 }}>
-        <span className="btn-purple" style={{ display: "block", textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 12.5, padding: "11px 0", borderRadius: 8, background: sold ? "var(--pk-ink2)" : "var(--purple)", color: "#fff", fontWeight: 600 }}>
+        <span className={`btn ${sold ? "btn-ink" : "btn-purple"}`} style={{ display: "block", textAlign: "center", width: "100%", borderRadius: 8, opacity: sold ? 0.65 : 1 }}>
           {sold ? "Sold out" : r.status === "soon" ? "Join the queue" : "Get tickets"}
         </span>
       </div>

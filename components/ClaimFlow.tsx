@@ -174,7 +174,7 @@ function Outcome({ result, onWaitlist, busy }: { result: ClaimResult; onWaitlist
   const soldOut = result.error === "SOLD_OUT";
   return (
     <div>
-      <span className="badge bad" style={{ borderColor: "var(--pk-red)", color: "var(--pk-red)" }}>{soldOut ? "sold out" : "busy"}</span>
+      <span className="badge bad">{soldOut ? "sold out" : "busy"}</span>
       <div style={{ fontFamily: "var(--font-syne)", fontWeight: 800, fontSize: 26, textTransform: "uppercase", letterSpacing: "-.02em", margin: "14px 0 4px" }}>
         {soldOut ? "Gone — fairly." : "It's busy right now."}
       </div>

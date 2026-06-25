@@ -46,7 +46,7 @@ export function MapPicker({
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
       const icon = L.divIcon({
         className: "os-pin",
-        html: '<div style="width:18px;height:18px;border-radius:50% 50% 50% 0;background:var(--vermilion,#e8472b);transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>',
+        html: '<div style="width:18px;height:18px;border-radius:50% 50% 50% 0;background:#5a2be6;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>',
         iconSize: [18, 18],
         iconAnchor: [9, 18],
       });
