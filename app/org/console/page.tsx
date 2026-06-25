@@ -10,7 +10,13 @@ export default async function OrgPage() {
   const events = await Promise.all(
     evs.map(async (e) => {
       const slot = await data.slotForEvent(e.id);
-      return { id: e.id, title: e.title, capacity: slot?.capacity ?? 0, price: e.price };
+      return {
+        id: e.id,
+        title: e.title,
+        capacity: slot?.capacity ?? 0,
+        price: e.price,
+        organizer: e.organizer_name,
+      };
     }),
   );
 
