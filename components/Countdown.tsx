@@ -18,14 +18,14 @@ export function Countdown({
   }, []);
 
   if (now === null)
-    return <span className="num" style={{ fontSize: 13, color: "var(--color-ink-3)" }}>—</span>;
+    return <span className="num" style={{ fontSize: 13, color: "var(--pk-ink2)" }}>—</span>;
 
   const d = target - now;
   if (d <= 0) {
     onLive?.();
     return (
-      <span className="tag tag-signal" style={{ fontSize: 11 }}>
-        <span className="dot dot-live" /> on sale now
+      <span className="mono" style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--purple)", fontWeight: 600 }}>
+        <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--purple)", display: "inline-block" }} /> On sale now
       </span>
     );
   }
@@ -34,7 +34,7 @@ export function Countdown({
   const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
   return (
-    <span className="num" style={{ fontSize: 14, letterSpacing: "0.02em" }}>
+    <span className="num" style={{ fontFamily: "var(--font-syne)", fontWeight: 800, fontSize: 30, letterSpacing: "0.01em" }}>
       {h > 0 ? `${pad(h)}:` : ""}
       {pad(m)}:{pad(s)}
     </span>

@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Eyebrow, Tag } from "@/components/ui";
 
 interface Ticket {
   event_id: string;
@@ -33,33 +32,26 @@ export function MyTickets() {
       });
   }, []);
 
-  if (!ready) return <div className="mono" style={{ color: "var(--color-ink-3)" }}>loading…</div>;
+  if (!ready) return <div className="mono" style={{ color: "var(--pk-ink2)" }}>loading…</div>;
 
   if (!buyerId)
     return (
-      <div className="frame" style={{ padding: 28 }}>
-        <Eyebrow>not signed in</Eyebrow>
-        <p className="mono" style={{ fontSize: 13, color: "var(--color-ink-2)", margin: "10px 0 16px" }}>
-          Your tickets bind to a verified phone + this device. Claim a seat to start.
+      <div className="pn">
+        <div className="ph"><h3>Not signed in</h3></div>
+        <p className="mono" style={{ fontSize: 13, color: "var(--pk-ink2)", margin: "0 0 16px" }}>
+          Your tickets bind to a verified phone + this device. Get a ticket to start.
         </p>
-        <Link href="/discover" className="btn btn-primary focusable">browse live drops →</Link>
+        <Link href="/discover" className="btn btn-ink-fill focusable">Browse events →</Link>
       </div>
     );
 
   return (
     <div>
-      <div className="panel" style={{ padding: "10px 14px", marginBottom: 18 }}>
-        <span className="eyebrow">session · device-bound</span>{" "}
-        <span className="num" style={{ fontSize: 12, color: "var(--color-ink-2)" }}>{buyerId}</span>
-      </div>
-
       {tickets.length === 0 && waitlist.length === 0 && (
-        <div className="frame" style={{ padding: 28 }}>
-          <span className="mono" style={{ color: "var(--color-ink-2)" }}>No tickets yet.</span>
-        </div>
+        <div className="pn"><span className="mono" style={{ color: "var(--pk-ink2)" }}>No tickets yet.</span></div>
       )}
 
-      <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(320px,1fr))" }}>
+      <div className="cards" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(320px,1fr))" }}>
         {tickets.map((t) => (
           <TicketStub key={`${t.event_id}-${t.seat_label}`} t={t} />
         ))}
@@ -67,14 +59,13 @@ export function MyTickets() {
 
       {waitlist.length > 0 && (
         <div style={{ marginTop: 24 }}>
-          <Eyebrow>waitlist · first refusal on cancellations</Eyebrow>
-          <div className="panel" style={{ padding: 14, marginTop: 10 }}>
-            {waitlist.map((w) => (
-              <div key={w.title} className="flex justify-between" style={{ padding: "6px 0" }}>
-                <span className="mono" style={{ fontSize: 13 }}>{w.title}</span>
-                <span className="num" style={{ fontSize: 13 }}>#{w.position} in queue</span>
-              </div>
-            ))}
+          <div className="lbl" style={{ color: "var(--pk-ink2)", marginBottom: 10 }}>Waitlist · first refusal on cancellations</div>
+          <div className="pn">
+            <ul className="brk">
+              {waitlist.map((w) => (
+                <li key={w.title}><span className="mono">{w.title}</span><span className="num">#{w.position} in queue</span></li>
+              ))}
+            </ul>
           </div>
         </div>
       )}
@@ -82,8 +73,8 @@ export function MyTickets() {
   );
 }
 
-// Rotating barcode (TOTP-style, 30s window) — PRD §8 H-5. The static secret is
-// never shown; this rotates so a screenshot expires.
+// Rotating gate code (TOTP-style, 30s window). The static secret is never shown;
+// it rotates so a screenshot expires.
 function TicketStub({ t }: { t: Ticket }) {
   const [code, setCode] = useState("------");
   const [pct, setPct] = useState(100);
@@ -104,30 +95,28 @@ function TicketStub({ t }: { t: Ticket }) {
 
   const activated = t.status === "activated";
   return (
-    <div className="frame" style={{ padding: 0, overflow: "hidden" }}>
-      <div className="flex items-center justify-between" style={{ padding: "10px 14px", borderBottom: "1px dashed var(--color-line-2)" }}>
-        <Tag tone={activated ? "affirm" : "solid"}>{activated ? "activated" : "valid"}</Tag>
-        <span className="mono" style={{ fontSize: 11, color: "var(--color-ink-3)" }}>
-          confirmed
-        </span>
+    <div className="ticket">
+      <div className="tt">
+        <span className="badge">{activated ? "activated ✓" : "valid ✓"}</span>
+        <span className="mono" style={{ fontSize: 11, color: "var(--pk-ink2)" }}>confirmed</span>
       </div>
-      <div style={{ padding: 14 }}>
-        <div className="display" style={{ fontSize: 20 }}>{t.title}</div>
-        <div className="mono" style={{ fontSize: 12, color: "var(--color-ink-3)", margin: "4px 0 14px" }}>
+      <div style={{ padding: 16 }}>
+        <div style={{ fontFamily: "var(--font-syne)", fontWeight: 800, fontSize: 21, textTransform: "uppercase", letterSpacing: "-.02em", lineHeight: 1.05 }}>{t.title}</div>
+        <div className="mono" style={{ fontSize: 12, color: "var(--pk-ink2)", margin: "8px 0 16px" }}>
           {t.venue} · {t.city} · seat {t.seat_label}
         </div>
 
-        {/* rotating barcode */}
-        <div className="panel-inset" style={{ padding: 12 }}>
+        {/* rotating gate code */}
+        <div style={{ border: "1.5px solid var(--pk-ink)", borderRadius: 10, padding: 14, background: "var(--cream2)" }}>
           <div className="flex items-center justify-between">
-            <span className="eyebrow">rotating gate code</span>
-            <span className="num" style={{ fontSize: 22, letterSpacing: "0.18em" }}>{code}</span>
+            <span className="lbl" style={{ color: "var(--pk-ink2)" }}>Gate code</span>
+            <span className="code">{code}</span>
           </div>
-          <div className="meter" style={{ marginTop: 10 }}>
-            <span style={{ width: `${pct}%`, transition: "width .25s linear" }} />
+          <div className="cmeter" style={{ marginTop: 12 }}>
+            <span className="fill" style={{ width: `${pct}%`, display: "block", height: "100%", transition: "width .25s linear" }} />
           </div>
-          <div className="mono" style={{ fontSize: 10.5, color: "var(--color-ink-3)", marginTop: 6 }}>
-            expires every 30s · screenshot is worthless · verified at the gate
+          <div className="mono" style={{ fontSize: 10.5, color: "var(--pk-ink2)", marginTop: 8 }}>
+            Refreshes every 30s · a screenshot won&apos;t work · scanned at the gate
           </div>
         </div>
       </div>

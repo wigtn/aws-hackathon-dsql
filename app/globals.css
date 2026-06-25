@@ -371,6 +371,28 @@ body{ background:var(--cream); background-image:none; }
 .poster .plan .pt .nm{ font-family:var(--font-syne); font-weight:800; font-size:20px; text-transform:uppercase; letter-spacing:-.02em; }
 .poster .plan ul{ list-style:none; margin-top:12px; font-family:var(--font-mono); font-size:12px; line-height:1.8; }
 
+/* interactive seat picker (buyer flow) */
+.poster .pseat{ aspect-ratio:1; min-height:30px; display:grid; place-items:center; font-family:var(--font-mono); font-size:10px; color:var(--pk-ink2); border:1.5px solid var(--pk-ink); border-radius:3px; background:var(--cream); cursor:default; user-select:none; transition:.1s; }
+.poster .pseat[data-status="open"]{ cursor:pointer; }
+.poster .pseat[data-status="open"]:hover{ border-color:var(--purple); color:var(--purple); }
+.poster .pseat[data-status="held"]{ background:var(--bright); border-color:var(--purple); color:var(--purple); }
+/* taken/sold = muted gray, clearly unavailable (not the brand color) */
+.poster .pseat[data-status="confirmed"], .poster .pseat[data-status="activated"], .poster .pseat[data-status="sold"]{ background:#bdb6a6; border-color:#aaa392; color:#f4efe4; cursor:not-allowed; }
+.poster .pseat[data-status="released"]{ background:var(--cream2); }
+/* selected = your pick: brand purple fill + check, lifted + ringed = the highlight */
+.poster .pseat[data-selected="true"]{ background:var(--purple); border-color:var(--purple); color:#fff; font-size:13px; font-weight:700; transform:scale(1.12); box-shadow:0 0 0 3px var(--bright); position:relative; z-index:2; cursor:pointer; }
+.poster .seatstat{ display:flex; flex-wrap:wrap; align-items:center; gap:18px; }
+.poster .seatstat .s{ display:inline-flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:12px; color:var(--pk-ink2); }
+.poster .seatstat .s i{ width:13px; height:13px; border-radius:3px; border:1.5px solid var(--pk-ink); display:inline-block; }
+.poster .seatstat .s i.held{ background:var(--bright); border-color:var(--purple); }
+.poster .seatstat .s i.sold{ background:#bdb6a6; border-color:#aaa392; }
+.poster .section-h{ font-family:var(--font-mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--pk-ink2); margin:18px 0 8px; }
+.poster .seatrow{ display:grid; grid-template-columns:repeat(auto-fill, minmax(34px,1fr)); gap:6px; }
+/* ticket card (my tickets) */
+.poster .ticket{ border:2px solid var(--pk-ink); border-radius:14px; overflow:hidden; background:var(--cream); }
+.poster .ticket .tt{ display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:2px dashed var(--pink-line); }
+.poster .ticket .code{ font-family:var(--font-syne); font-weight:800; font-size:42px; letter-spacing:.06em; color:var(--purple); }
+
 @media(max-width:980px){
   .poster .cols2, .poster .cols2.wide-left{ grid-template-columns:1fr; }
   .poster .cards{ grid-template-columns:1fr 1fr; }

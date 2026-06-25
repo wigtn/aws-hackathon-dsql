@@ -3,8 +3,6 @@ import { notFound } from "next/navigation";
 import { getData } from "@/lib/data";
 import { SeatMap } from "@/components/SeatMap";
 import { Countdown } from "@/components/Countdown";
-import { Eyebrow, Tag } from "@/components/ui";
-import { StorefrontBar } from "@/components/PoweredBy";
 
 export default async function EventPage({
   params,
@@ -18,66 +16,50 @@ export default async function EventPage({
   if (!event || !slot) notFound();
 
   return (
-    <div className="shell" style={{ paddingTop: 28 }}>
-      <StorefrontBar organizer={event.organizer_name} />
-      <Link href="/discover" className="eyebrow ulink" style={{ borderBottom: "none" }}>
-        ← buyer view
-      </Link>
+    <div className="poster">
+      <div className="wrap">
+        <section className="band" data-wm="LIVE">
+          <span className="kick">{event.organizer_name} · {event.category}</span>
+          <h1>{event.title}</h1>
+          <p className="sub">{event.subtitle} · {event.venue}, {event.city}</p>
+        </section>
 
-      <div
-        className="grid gap-8"
-        style={{ gridTemplateColumns: "minmax(0,1fr) 320px", marginTop: 16, alignItems: "start" }}
-      >
-        {/* main */}
-        <div>
-          <div className="flex items-center gap-3" style={{ marginBottom: 10 }}>
-            <Tag tone="solid">{event.category}</Tag>
-            <span className="eyebrow">{event.organizer_name}</span>
+        <div className="cols2 wide-left" style={{ alignItems: "start" }}>
+          {/* seat map */}
+          <div>
+            <SeatMap eventId={event.id} />
           </div>
-          <h1 className="display" style={{ fontSize: "clamp(34px,5vw,56px)" }}>
-            {event.title}
-          </h1>
-          <p className="mono" style={{ fontSize: 14, color: "var(--color-ink-3)", marginTop: 10 }}>
-            {event.subtitle} · {event.venue}, {event.city}
-          </p>
 
-          <div className="rule" style={{ margin: "24px 0" }} />
-          <SeatMap eventId={event.id} />
-        </div>
-
-        {/* rail */}
-        <aside style={{ position: "sticky", top: 20 }}>
-          <div className="frame" style={{ padding: 18, marginBottom: 14 }}>
-            <Eyebrow>on sale</Eyebrow>
-            <div style={{ marginTop: 10 }}>
+          {/* rail */}
+          <aside>
+            <div className="pn" style={{ marginBottom: 18 }}>
+              <div className="ph"><h3>On sale</h3></div>
               <Countdown target={event.sale_opens_at} />
+              <div style={{ borderTop: "1px solid var(--pink-line)", margin: "16px 0" }} />
+              <div className="lbl" style={{ color: "var(--pk-ink2)" }}>Your guarantee</div>
+              <div style={{ fontFamily: "var(--font-syne)", fontWeight: 700, fontSize: 18, letterSpacing: "-.02em", marginTop: 8 }}>
+                The seat you pick is yours
+              </div>
+              <div className="mono" style={{ fontSize: 11.5, color: "var(--pk-ink2)", marginTop: 4 }}>
+                never oversold · never double-booked
+              </div>
             </div>
-            <div className="rule" style={{ margin: "16px 0" }} />
-            <Eyebrow>your guarantee</Eyebrow>
-            <div className="num" style={{ fontSize: 13, marginTop: 8, color: "var(--color-ink)" }}>
-              The seat you pick is yours
-            </div>
-            <div className="mono" style={{ fontSize: 11.5, color: "var(--color-ink-3)", marginTop: 4 }}>
-              never oversold · never double-booked
-            </div>
-          </div>
 
-          <div className="panel" style={{ padding: 16 }}>
-            <Eyebrow>anti-scalp</Eyebrow>
-            <ul
-              className="mono"
-              style={{ fontSize: 12, color: "var(--color-ink-2)", lineHeight: 1.7, marginTop: 8, listStyle: "none" }}
-            >
-              <li>· identity + device-bound ticket</li>
-              <li>· rotating barcode (TOTP, 30s)</li>
-              <li>· cancellations re-offered to #1 in queue</li>
-              <li>· bot mass-claiming made uneconomic</li>
-            </ul>
-            <div className="mono" style={{ fontSize: 11, color: "var(--color-ink-3)", marginTop: 10 }}>
-              friction raised — not “resale impossible.”
+            <div className="pn">
+              <div className="ph"><h3>Fair for fans</h3></div>
+              <ul className="check" style={{ fontSize: 12.5 }}>
+                <li><span className="ck">✓</span> Tied to a verified person + device</li>
+                <li><span className="ck">✓</span> Rotating entry code at the gate</li>
+                <li><span className="ck">✓</span> Cancellations go to the next real fan</li>
+                <li><span className="ck">✓</span> Bots priced out</li>
+              </ul>
             </div>
-          </div>
-        </aside>
+
+            <p className="mono" style={{ fontSize: 11, color: "var(--pk-ink2)", textAlign: "center", marginTop: 18 }}>
+              powered by OpenSlot · <Link href="/discover" style={{ color: "var(--purple)" }}>back to events →</Link>
+            </p>
+          </aside>
+        </div>
       </div>
     </div>
   );
