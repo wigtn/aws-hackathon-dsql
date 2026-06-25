@@ -90,6 +90,33 @@ export class SeatLedger {
     this.bySlot.set(slot.id, list);
   }
 
+  // Seed from explicit seat specs (any layout: GA / sections / grid). The seed
+  // catalog still uses seed() above; createDrop routes through here so an
+  // organizer-chosen layout maps 1:1 onto seat rows.
+  seedSpecs(slot: Slot, specs: { seat_no: number; section: string; row_label: string }[]) {
+    const list: number[] = [];
+    for (const sp of specs) {
+      const seat: SeatRow = {
+        id: `${slot.id}-seat-${sp.seat_no}`,
+        slot_id: slot.id,
+        seat_no: sp.seat_no,
+        section: sp.section,
+        row_label: sp.row_label,
+        buyer_id: null,
+        status: "open",
+        version: 1,
+        region: null,
+        reserved_for: null,
+        reserved_until: null,
+        hold_expires_at: null,
+        claimed_at: null,
+      };
+      this.seats.set(this.key(slot.id, sp.seat_no), seat);
+      list.push(sp.seat_no);
+    }
+    this.bySlot.set(slot.id, list);
+  }
+
   get(slotId: string, seatNo: number): SeatRow | undefined {
     return this.seats.get(this.key(slotId, seatNo));
   }

@@ -4,6 +4,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eyebrow } from "@/components/ui";
 import { MapPicker } from "@/components/MapPicker";
+import type { SeatLayout } from "@/lib/seatlayout";
+
+type SeatModel = SeatLayout["kind"]; // "ga" | "sections" | "grid"
 
 // Quick-jump cities for the drop location picker (organizer can still drag the
 // pin anywhere). Coords match the seed companies so created + seed drops share
@@ -382,15 +385,31 @@ function CreateDrop({
   onCreated: (id: string, opt: EvOpt) => void;
 }) {
   const PRESETS = [
-    { label: "arena concert", category: "concert", capacity: 80, price: 120 },
-    { label: "limited drop", category: "drop", capacity: 30, price: 60 },
-    { label: "sports final", category: "sports", capacity: 60, price: 95 },
-    { label: "club night", category: "concert", capacity: 24, price: 35 },
+    { label: "arena concert", category: "concert", price: 120, model: "sections" as SeatModel, sections: [{ name: "FLOOR", count: 80 }, { name: "LOWER", count: 140 }, { name: "UPPER", count: 180 }] },
+    { label: "limited drop", category: "drop", price: 60, model: "ga" as SeatModel, gaCap: 1 },
+    { label: "sports final", category: "sports", price: 95, model: "sections" as SeatModel, sections: [{ name: "NORTH", count: 120 }, { name: "SOUTH", count: 120 }, { name: "VIP", count: 60 }] },
+    { label: "club night", category: "concert", price: 35, model: "ga" as SeatModel, gaCap: 120 },
   ];
   const [title, setTitle] = useState("");
   const [preset, setPreset] = useState(0);
-  const [capacity, setCapacity] = useState(80);
   const [price, setPrice] = useState(120);
+  // seat model — GA (count only) / sections (named tiers) / grid (rows × seats)
+  const [model, setModel] = useState<SeatModel>("sections");
+  const [gaCap, setGaCap] = useState(120);
+  const [sections, setSections] = useState<{ name: string; count: number }[]>([
+    { name: "FLOOR", count: 80 }, { name: "LOWER", count: 140 }, { name: "UPPER", count: 180 },
+  ]);
+  const [rows, setRows] = useState(12);
+  const [cols, setCols] = useState(20);
+
+  function applyPreset(i: number) {
+    const p = PRESETS[i];
+    setPreset(i);
+    setPrice(p.price);
+    setModel(p.model);
+    if (p.model === "ga" && p.gaCap != null) setGaCap(p.gaCap);
+    if (p.model === "sections" && p.sections) setSections(p.sections);
+  }
   const [openMode, setOpenMode] = useState<"now" | "1m" | "5m" | "custom">("now");
   const [customDt, setCustomDt] = useState("");
   const [busy, setBusy] = useState(false);
@@ -416,13 +435,22 @@ function CreateDrop({
     return undefined;
   }
 
+  // capacity + layout are derived from the chosen seat model
+  const cleanSections = sections.map((s) => ({ name: s.name.trim() || "SEC", count: Math.max(1, Number(s.count) || 1) }));
+  const layout: SeatLayout =
+    model === "ga" ? { kind: "ga", capacity: gaCap } :
+    model === "grid" ? { kind: "grid", rows, cols } :
+    { kind: "sections", sections: cleanSections };
+  const capacity = model === "ga" ? gaCap : model === "grid" ? rows * cols : cleanSections.reduce((a, s) => a + s.count, 0);
+  const overCap = capacity > 500;
+
   async function submit() {
-    if (!title.trim()) return;
+    if (!title.trim() || overCap) return;
     setBusy(true);
     const opens_at = opensAtMs();
     const res = await fetch("/api/org/create", {
       method: "POST",
-      body: JSON.stringify({ title, category: PRESETS[preset].category, capacity, price, opens_at, organizer_name: orgName ?? undefined, venue, city, country, lat, lng }),
+      body: JSON.stringify({ title, category: PRESETS[preset].category, price, opens_at, organizer_name: orgName ?? undefined, venue, city, country, lat, lng, layout }),
     });
     const d = await res.json();
     setBusy(false);
@@ -456,22 +484,65 @@ function CreateDrop({
         <label className="eyebrow" style={{ display: "block", marginTop: 14, marginBottom: 6 }}>type</label>
         <div className="grid gap-2" style={{ gridTemplateColumns: "1fr 1fr" }}>
           {PRESETS.map((p, i) => (
-            <button key={p.label} onClick={() => { setPreset(i); setCapacity(p.capacity); setPrice(p.price); }} className="focusable" style={{ padding: 10, textAlign: "left", cursor: "pointer", borderRadius: 8, border: `1.5px solid ${preset === i ? "var(--purple)" : "var(--pink-line)"}`, background: preset === i ? "var(--purple)" : "var(--cream)", color: preset === i ? "#fff" : "var(--pk-ink)" }}>
+            <button key={p.label} onClick={() => applyPreset(i)} className="focusable" style={{ padding: 10, textAlign: "left", cursor: "pointer", borderRadius: 8, border: `1.5px solid ${preset === i ? "var(--purple)" : "var(--pink-line)"}`, background: preset === i ? "var(--purple)" : "var(--cream)", color: preset === i ? "#fff" : "var(--pk-ink)" }}>
               <div className="mono" style={{ fontSize: 13 }}>{p.label}</div>
-              <div className="eyebrow" style={{ color: "inherit", opacity: 0.7 }}>cap {p.capacity} · ${p.price}</div>
+              <div className="eyebrow" style={{ color: "inherit", opacity: 0.7 }}>{p.model === "ga" ? `GA · ${p.gaCap}` : "reserved"} · ${p.price}</div>
             </button>
           ))}
         </div>
 
-        <div className="flex gap-3" style={{ marginTop: 14 }}>
-          <div style={{ flex: 1 }}>
-            <label className="eyebrow">capacity</label>
-            <input type="number" value={capacity} min={1} max={500} onChange={(e) => setCapacity(Number(e.target.value))} className="num focusable" style={inp} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <label className="eyebrow">price (USD)</label>
-            <input type="number" value={price} min={1} onChange={(e) => setPrice(Number(e.target.value))} className="num focusable" style={inp} />
-          </div>
+        {/* seat model — GA / sections / grid. Layout is cosmetic; every seat is
+            still one ledger row, so zero-oversell holds for any model. */}
+        <label className="eyebrow" style={{ display: "block", marginTop: 14, marginBottom: 6 }}>seat model</label>
+        <div className="flex flex-wrap gap-2">
+          {([["ga", "General admission"], ["sections", "Sections"], ["grid", "Rows × seats"]] as [SeatModel, string][]).map(([k, lbl]) => (
+            <button key={k} onClick={() => setModel(k)} className="mono focusable" style={{ fontSize: 12, padding: "7px 12px", cursor: "pointer", borderRadius: 7, border: `1.5px solid ${model === k ? "var(--purple)" : "var(--pink-line)"}`, background: model === k ? "var(--purple)" : "var(--cream)", color: model === k ? "#fff" : "var(--pk-ink2)" }}>
+              {lbl}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ marginTop: 10 }}>
+          {model === "ga" && (
+            <div>
+              <label className="eyebrow">capacity (general admission)</label>
+              <input type="number" value={gaCap} min={1} max={500} onChange={(e) => setGaCap(Math.max(1, Number(e.target.value) || 1))} className="num focusable" style={inp} />
+            </div>
+          )}
+          {model === "grid" && (
+            <div className="flex gap-3">
+              <div style={{ flex: 1 }}>
+                <label className="eyebrow">rows</label>
+                <input type="number" value={rows} min={1} max={50} onChange={(e) => setRows(Math.max(1, Number(e.target.value) || 1))} className="num focusable" style={inp} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label className="eyebrow">seats / row</label>
+                <input type="number" value={cols} min={1} max={40} onChange={(e) => setCols(Math.max(1, Number(e.target.value) || 1))} className="num focusable" style={inp} />
+              </div>
+            </div>
+          )}
+          {model === "sections" && (
+            <div className="grid gap-2">
+              {sections.map((sec, i) => (
+                <div key={i} className="flex gap-2" style={{ alignItems: "center" }}>
+                  <input value={sec.name} placeholder="section" onChange={(e) => setSections((arr) => arr.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} className="focusable" style={{ ...inp, marginTop: 0, flex: 1.4 }} />
+                  <input type="number" value={sec.count} min={1} onChange={(e) => setSections((arr) => arr.map((x, j) => j === i ? { ...x, count: Math.max(1, Number(e.target.value) || 1) } : x))} className="num focusable" style={{ ...inp, marginTop: 0, flex: 1 }} />
+                  <button onClick={() => setSections((arr) => arr.length > 1 ? arr.filter((_, j) => j !== i) : arr)} className="mono focusable" title="remove" style={{ border: "1.5px solid var(--pink-line)", background: "var(--cream)", borderRadius: 7, cursor: "pointer", padding: "8px 11px", color: "var(--pk-ink2)" }}>✕</button>
+                </div>
+              ))}
+              {sections.length < 8 && (
+                <button onClick={() => setSections((arr) => [...arr, { name: "", count: 50 }])} className="mono focusable" style={{ border: "1.5px dashed var(--pink-line)", background: "transparent", borderRadius: 7, cursor: "pointer", padding: "8px 11px", color: "var(--pk-ink2)", fontSize: 12 }}>+ add section</button>
+              )}
+            </div>
+          )}
+          <p className="mono" style={{ fontSize: 10.5, color: overCap ? "var(--vermilion,#df3b16)" : "var(--pk-ink2)", marginTop: 6 }}>
+            = <span className="num">{capacity}</span> seats total{overCap ? " · over the 500-seat demo limit" : model === "ga" ? " · no seat map, just a live count" : ""}
+          </p>
+        </div>
+
+        <div style={{ marginTop: 14 }}>
+          <label className="eyebrow">price (USD)</label>
+          <input type="number" value={price} min={1} onChange={(e) => setPrice(Number(e.target.value))} className="num focusable" style={inp} />
         </div>
 
         <label className="eyebrow" style={{ display: "block", marginTop: 14, marginBottom: 6 }}>location</label>

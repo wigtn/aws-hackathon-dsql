@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getData } from "@/lib/data";
 import { EventCategory } from "@/lib/sim/types";
+import { sanitizeLayout, layoutCapacity } from "@/lib/seatlayout";
 
 // POST /api/org/create  { title, category, capacity, price, organizer_name? }
 // Self-serve drop creation (B2B onboarding). Provisions PG catalog + DSQL slot.
@@ -12,7 +13,11 @@ export async function POST(req: NextRequest) {
       ? body.category
       : "drop"
   ) as EventCategory;
-  const capacity = Math.max(1, Math.min(500, Number(body.capacity) || 50));
+  // Seat model (GA / sections / grid). When valid it drives the seats + capacity.
+  const layout = sanitizeLayout(body.layout);
+  const capacity = layout
+    ? layoutCapacity(layout)
+    : Math.max(1, Math.min(500, Number(body.capacity) || 50));
   const price = Math.max(1, Math.min(100000, Number(body.price) || 50));
   const opens_at =
     Number.isFinite(body.opens_at) && Number(body.opens_at) > 0
@@ -38,6 +43,7 @@ export async function POST(req: NextRequest) {
     country: typeof body.country === "string" ? body.country.slice(0, 2).toUpperCase() : undefined,
     lat: validPin ? lat : undefined,
     lng: validPin ? lng : undefined,
+    layout: layout ?? undefined,
   });
   return NextResponse.json({
     ok: true,

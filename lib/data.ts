@@ -13,6 +13,7 @@ import {
 } from "@/lib/sim/store";
 import { discover as simDiscover, DiscoveryParams, DiscoveryResult } from "@/lib/discovery";
 import { ClaimResult, EventRow, RegionId, SeatRow, SeatStatus, Slot } from "@/lib/sim/types";
+import type { SeatLayout } from "@/lib/seatlayout";
 import { DATA_PLANE } from "@/lib/db";
 import { dsqlData } from "@/lib/db/dsql-data";
 import { fingerprint, type Allocation } from "@/lib/fairness";
@@ -97,6 +98,10 @@ export interface CreateDropInput {
   country?: string;
   lat?: number;
   lng?: number;
+  // Seat model the organizer chose (GA / sections / grid). When present it
+  // determines the generated seats + capacity; the layout is purely cosmetic —
+  // every seat is still one DSQL row, so the oversell guarantee is unchanged.
+  layout?: SeatLayout;
 }
 
 export interface Data {

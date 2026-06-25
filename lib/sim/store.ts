@@ -12,6 +12,7 @@ import { embedQuery } from "@/lib/embedding.mjs";
 // Seed companies + their drops live in one registry (lib/orgs.ts) — the B2B
 // model: a few real-feeling event businesses, each owning its own drops.
 import { seedEvents, seedCapacities } from "@/lib/orgs";
+import { seatSpecsFromLayout, layoutCapacity, type SeatLayout } from "@/lib/seatlayout";
 
 export { embedQuery };
 
@@ -86,6 +87,7 @@ export function createDrop(input: {
   country?: string;
   lat?: number;
   lng?: number;
+  layout?: SeatLayout;
 }): EventRow {
   const s = store();
   const t = Date.now();
@@ -122,22 +124,32 @@ export function createDrop(input: {
     resale_markup: 3.5,
   };
   s.events.unshift(ev);
+  // The chosen seat model drives the seats + capacity. Without a layout we fall
+  // back to the legacy 3-section split from the raw capacity number.
+  const specs = input.layout ? seatSpecsFromLayout(`slot-${id}`, input.layout) : null;
+  const capacity = input.layout
+    ? layoutCapacity(input.layout)
+    : Math.max(1, Math.min(500, input.capacity));
   const slot: Slot = {
     id: `slot-${id}`,
     event_id: id,
-    capacity: Math.max(1, Math.min(500, input.capacity)),
+    capacity,
     sale_opens_at: ev.sale_opens_at,
   };
   s.slots.set(id, slot);
-  const sections =
-    slot.capacity <= 1
-      ? [{ section: "GA", rows: 1 }]
-      : [
-          { section: "FLOOR", rows: Math.ceil(slot.capacity / 3) },
-          { section: "LWR", rows: Math.ceil(slot.capacity / 3) },
-          { section: "UPR", rows: Math.ceil(slot.capacity / 3) },
-        ];
-  s.ledger.seed(slot, sections);
+  if (specs) {
+    s.ledger.seedSpecs(slot, specs);
+  } else {
+    const sections =
+      slot.capacity <= 1
+        ? [{ section: "GA", rows: 1 }]
+        : [
+            { section: "FLOOR", rows: Math.ceil(slot.capacity / 3) },
+            { section: "LWR", rows: Math.ceil(slot.capacity / 3) },
+            { section: "UPR", rows: Math.ceil(slot.capacity / 3) },
+          ];
+    s.ledger.seed(slot, sections);
+  }
   s.waitlist.set(slot.id, []);
   return ev;
 }

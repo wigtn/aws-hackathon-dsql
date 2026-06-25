@@ -8,6 +8,7 @@ import { isOccError } from "@/lib/occ";
 import { fingerprint, type Allocation } from "@/lib/fairness";
 import { store, embedQuery } from "@/lib/sim/store";
 import { haversineKm } from "@/lib/discovery";
+import { seatSpecsFromLayout, layoutCapacity } from "@/lib/seatlayout";
 import { ClaimResult, EventRow, RegionId, SeatRow, SeatStatus } from "@/lib/sim/types";
 import type { DiscoveryParams, DiscoveryResult } from "@/lib/discovery";
 import type { CreateDropInput, Data, Metrics, MyTicket, PublicSeat, Snapshot } from "@/lib/data";
@@ -228,10 +229,13 @@ export const dsqlData: Data = {
       embedding: embedQuery(`${input.title} ${input.category}`),
       price: Math.max(1, input.price), resale_markup: 3.5,
     };
-    const capacity = Math.max(1, Math.min(500, input.capacity));
+    // The seat model (GA / sections / grid) drives the seats + capacity; the
+    // legacy genSeats(capacity) is the fallback when no layout was sent.
+    const specs = input.layout ? seatSpecsFromLayout(SLOT(id), input.layout) : genSeats(SLOT(id), Math.max(1, Math.min(500, input.capacity)));
+    const capacity = input.layout ? layoutCapacity(input.layout) : specs.length;
     await insertEvent(ev);
     await q(PRIMARY, "INSERT INTO drop_slots (id,event_id,capacity,sale_opens_at) VALUES ($1,$2,$3,$4)", [SLOT(id), id, capacity, ev.sale_opens_at]);
-    await insertSeats(SLOT(id), genSeats(SLOT(id), capacity));
+    await insertSeats(SLOT(id), specs);
     return ev;
   },
 
