@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Tag, Meter } from "@/components/ui";
 
 interface Seat {
   seat_no: number;
@@ -29,104 +28,74 @@ export function SeatMap({ eventId }: { eventId: string }) {
 
   useEffect(() => {
     load();
-    const id = setInterval(load, 1500); // live ledger poll
+    const id = setInterval(load, 1500);
     return () => clearInterval(id);
   }, [load]);
 
   if (!snap)
     return (
-      <div className="frame" style={{ padding: 28 }}>
-        <span className="mono" style={{ color: "var(--color-ink-3)" }}>
-          loading seats…
-        </span>
+      <div className="pn">
+        <span className="mono" style={{ color: "var(--pk-ink2)" }}>loading seats…</span>
       </div>
     );
 
   const isHero = snap.capacity === 1;
   const live = snap.sale_opens_at <= Date.now();
   const soldOut = snap.remaining_open === 0;
-
-  // group seats by section for the relational seat-map render (PRD §17 C-1)
+  const filled = snap.capacity - snap.remaining_open;
   const sections = Array.from(new Set(snap.seats.map((s) => s.section)));
 
   return (
     <div>
-      {/* status ledger row */}
-      <div
-        className="panel flex flex-wrap items-center gap-x-8 gap-y-2"
-        style={{ padding: "12px 16px", marginBottom: 16 }}
-      >
-        {(["open", "held", "confirmed", "sold"] as const).map((k) => (
-          <div key={k} className="flex items-center gap-2">
-            <span className={`seat`} data-status={k === "confirmed" ? "confirmed" : k} style={{ width: 14, height: 14, padding: 0 }} />
-            <span className="eyebrow">{k}</span>
-            <span className="num" style={{ fontSize: 13 }}>
-              {snap.counts[k === "sold" ? "sold" : k] ?? 0}
+      {/* status row */}
+      <div className="pn" style={{ marginBottom: 16 }}>
+        <div className="seatstat">
+          <span className="s"><i /> {snap.counts.open ?? 0} open</span>
+          <span className="s"><i className="held" /> {snap.counts.held ?? 0} on hold</span>
+          <span className="s"><i className="sold" /> {(snap.counts.confirmed ?? 0) + (snap.counts.sold ?? 0)} sold</span>
+          <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
+            <span className="num" style={{ fontFamily: "var(--font-syne)", fontWeight: 800, fontSize: 18 }}>{filled}/{snap.capacity}</span>
+            <span className="cmeter" style={{ width: 120 }}>
+              <span className="fill" style={{ width: `${(filled / Math.max(1, snap.capacity)) * 100}%` }} />
             </span>
-          </div>
-        ))}
-        <div style={{ marginLeft: "auto" }} className="flex items-center gap-3">
-          <span className="eyebrow">filled</span>
-          <div style={{ width: 120 }}>
-            <Meter value={snap.capacity - snap.remaining_open} max={snap.capacity} hot={soldOut} />
-          </div>
-          <span className="num" style={{ fontSize: 13 }}>
-            {snap.capacity - snap.remaining_open}/{snap.capacity}
           </span>
         </div>
       </div>
 
       {isHero ? (
-        // Hero last-seat: a single dramatic unit, not a grid.
-        <div
-          className="frame"
-          style={{ padding: 28, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}
-        >
+        <div className="pn" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, flexWrap: "wrap" }}>
           <div>
-            <div className="eyebrow" style={{ marginBottom: 8 }}>
-              one seat · the whole world
+            <div className="lbl" style={{ color: "var(--pk-ink2)" }}>One seat · the whole world</div>
+            <div style={{ fontFamily: "var(--font-syne)", fontWeight: 800, fontSize: 44, textTransform: "uppercase", letterSpacing: "-.03em", lineHeight: 1, margin: "8px 0 8px" }}>
+              {soldOut ? "Claimed" : "1 seat open"}
             </div>
-            <div className="display" style={{ fontSize: 40 }}>
-              {soldOut ? "Claimed." : "1 seat open"}
-            </div>
-            <div className="mono" style={{ fontSize: 13, color: "var(--color-ink-3)", marginTop: 6 }}>
+            <div className="mono" style={{ fontSize: 12.5, color: "var(--pk-ink2)", maxWidth: 340, lineHeight: 1.55 }}>
               {soldOut
                 ? "Claimed once — and that's final, everywhere, instantly."
                 : "Whoever confirms first gets it. No one else can double-book it."}
             </div>
           </div>
           <button
-            className={`btn ${soldOut ? "" : "btn-signal"} focusable`}
+            className={`btn ${soldOut ? "btn-ink" : "btn-purple"} focusable`}
             disabled={soldOut || !live}
             onClick={() => router.push(`/claim/${eventId}`)}
-            style={{ fontSize: 15, padding: "16px 26px" }}
+            style={{ fontSize: 14, padding: "15px 26px", opacity: soldOut || !live ? 0.5 : 1 }}
           >
-            {soldOut ? "sold out" : live ? "claim the seat →" : "not on sale yet"}
+            {soldOut ? "Sold out" : live ? "Get this seat →" : "Not on sale yet"}
           </button>
         </div>
       ) : (
-        <div className="frame" style={{ padding: 18 }}>
-          <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
-            <span className="eyebrow">stage</span>
-            <span className="eyebrow">{snap.remaining_open} of {snap.capacity} open</span>
+        <div className="pn">
+          <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
+            <span className="lbl" style={{ color: "var(--pk-ink2)" }}>Stage</span>
+            <span className="lbl" style={{ color: "var(--pk-ink2)" }}>{snap.remaining_open} of {snap.capacity} open</span>
           </div>
-          <div
-            style={{
-              height: 4,
-              background: "var(--color-ink)",
-              marginBottom: 20,
-              borderRadius: 2,
-            }}
-          />
+          <div style={{ height: 4, background: "var(--purple)", marginBottom: 8, borderRadius: 2 }} />
+
           {sections.map((sec) => (
-            <div key={sec} style={{ marginBottom: 18 }}>
-              <div className="eyebrow" style={{ marginBottom: 8 }}>
-                {sec}
-              </div>
-              <div
-                className="grid gap-1"
-                style={{ gridTemplateColumns: "repeat(auto-fill, minmax(34px, 1fr))" }}
-              >
+            <div key={sec}>
+              <div className="section-h">{sec}</div>
+              <div className="seatrow">
                 {snap.seats
                   .filter((s) => s.section === sec)
                   .map((s) => {
@@ -134,13 +103,13 @@ export function SeatMap({ eventId }: { eventId: string }) {
                     return (
                       <div
                         key={s.seat_no}
-                        className="seat focusable"
+                        className="pseat focusable"
                         data-status={s.status}
                         data-selected={selected === s.seat_no}
-                        onClick={() => claimable && setSelected(s.seat_no)}
+                        onClick={() => claimable && setSelected(selected === s.seat_no ? null : s.seat_no)}
                         title={`${s.section} ${s.row_label}${s.seat_no} · ${s.status}`}
                       >
-                        {s.seat_no}
+                        {selected === s.seat_no ? "✓" : s.seat_no}
                       </div>
                     );
                   })}
@@ -148,27 +117,23 @@ export function SeatMap({ eventId }: { eventId: string }) {
             </div>
           ))}
 
-          <div
-            className="flex items-center justify-between"
-            style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--color-line)" }}
-          >
-            <div className="mono" style={{ fontSize: 13, color: "var(--color-ink-2)" }}>
+          <div className="flex items-center justify-between" style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--pink-line)", flexWrap: "wrap", gap: 12 }}>
+            <div className="mono" style={{ fontSize: 13, color: "var(--pk-ink2)" }}>
               {selected ? (
-                <>selected seat <span className="num">#{selected}</span></>
+                <>selected seat <span className="num" style={{ color: "var(--purple)", fontWeight: 600 }}>#{selected}</span></>
               ) : soldOut ? (
-                <Tag tone="signal">sold out — join the waitlist</Tag>
+                "Sold out — join the waitlist"
               ) : (
-                "pick any open seat, or let us assign one"
+                "Pick any open seat, or let us assign one"
               )}
             </div>
             <button
-              className="btn btn-primary focusable"
+              className="btn btn-purple focusable"
               disabled={!live || soldOut}
-              onClick={() =>
-                router.push(`/claim/${eventId}${selected ? `?seat=${selected}` : ""}`)
-              }
+              onClick={() => router.push(`/claim/${eventId}${selected ? `?seat=${selected}` : ""}`)}
+              style={{ opacity: !live || soldOut ? 0.5 : 1 }}
             >
-              {soldOut ? "waitlist" : "claim →"}
+              {soldOut ? "Join waitlist" : "Get tickets →"}
             </button>
           </div>
         </div>
