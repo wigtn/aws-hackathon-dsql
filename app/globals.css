@@ -208,7 +208,10 @@ body{ background:var(--cream); background-image:none; }
 .poster .mono{ font-family:var(--font-mono); }
 .poster a{ color:inherit; text-decoration:none; }
 
-.poster .btn{ font-family:var(--font-mono); font-size:13px; padding:13px 20px; border-radius:9px; border:1.5px solid var(--cream); color:var(--cream); transition:.14s; cursor:pointer; display:inline-block; }
+/* ghost button lives on the purple hero/band — must be transparent so the cream
+   text/border read against purple. Without this it inherited the base .btn
+   light `--color-paper` background → cream-on-cream, invisible text. */
+.poster .btn{ font-family:var(--font-mono); font-size:13px; padding:13px 20px; border-radius:9px; border:1.5px solid var(--cream); background:transparent; color:var(--cream); transition:.14s; cursor:pointer; display:inline-block; }
 .poster .btn:hover{ background:var(--cream); color:var(--purple); }
 .poster .btn-fill{ background:var(--cream); color:var(--purple); font-weight:600; }
 .poster .btn-fill:hover{ background:#fff; }
