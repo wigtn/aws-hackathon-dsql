@@ -216,10 +216,14 @@ export const dsqlData: Data = {
     await ensureReady();
     const slug = (input.title || "drop").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24);
     const id = `ev-custom-${Date.now().toString(36)}-${slug || "drop"}`;
+    // Location from the organizer's map pin; Seoul default only as a fallback.
+    const lat = Number.isFinite(input.lat) ? (input.lat as number) : 37.5563;
+    const lng = Number.isFinite(input.lng) ? (input.lng as number) : 126.976;
     const ev: EventRow = {
       id, organizer_id: "org-you", organizer_name: input.organizer_name || "Your venue",
       title: input.title || "Untitled drop", subtitle: "Your drop · just created", category: input.category,
-      venue: "Your venue", city: "Seoul", country: "KR", lat: 37.5563, lng: 126.976,
+      venue: input.venue?.trim() || "Your venue", city: input.city?.trim() || "Seoul",
+      country: input.country?.trim() || "KR", lat, lng,
       sale_opens_at: typeof input.opens_at === "number" && input.opens_at > 0 ? input.opens_at : Date.now() - 1000,
       embedding: embedQuery(`${input.title} ${input.category}`),
       price: Math.max(1, input.price), resale_markup: 3.5,

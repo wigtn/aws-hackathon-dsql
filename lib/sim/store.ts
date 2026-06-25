@@ -8,12 +8,13 @@ import { SeatLedger } from "./engine";
 import { EventRow, Slot, WaitlistEntry } from "./types";
 // Embedding space lives in one framework-free module shared with the PG
 // provisioning script, so seeded vectors and live queries can't drift (M3).
-import { embed, embedQuery } from "@/lib/embedding.mjs";
+import { embedQuery } from "@/lib/embedding.mjs";
+// Seed companies + their drops live in one registry (lib/orgs.ts) — the B2B
+// model: a few real-feeling event businesses, each owning its own drops.
+import { seedEvents, seedCapacities } from "@/lib/orgs";
 
 export { embedQuery };
 
-const HOUR = 3_600_000;
-const MIN = 60_000;
 const now = () => Date.now();
 
 interface StoreShape {
@@ -31,121 +32,10 @@ function buildStore(): StoreShape {
   const slots = new Map<string, Slot>();
   const waitlist = new Map<string, WaitlistEntry[]>();
 
-  const events: EventRow[] = [
-    {
-      id: "ev-eras-seoul",
-      organizer_id: "org-tne",
-      organizer_name: "Transcend Live",
-      title: "ERAS — The Final Night",
-      subtitle: "Seoul · last-seat release",
-      category: "concert",
-      venue: "Goyang Stadium",
-      city: "Seoul",
-      country: "KR",
-      lat: 37.6708,
-      lng: 126.7794,
-      sale_opens_at: t - 5 * MIN, // LIVE now
-      embedding: embed({ pop: 2, arena: 1.5, global: 1, weekend: 1 }),
-      price: 180,
-      resale_markup: 4.5,
-      hero_seat_no: 1,
-    },
-    {
-      id: "ev-kpop-world",
-      organizer_id: "org-hybe",
-      organizer_name: "Hallyu Touring",
-      title: "STRAY HORIZON World Tour",
-      subtitle: "Global on-sale · 18 cities",
-      category: "concert",
-      venue: "KSPO Dome",
-      city: "Seoul",
-      country: "KR",
-      lat: 37.5202,
-      lng: 127.1262,
-      sale_opens_at: t - 1 * MIN, // LIVE — claimable seat grid + org demo
-      embedding: embed({ kpop: 2, global: 1.5, arena: 1 }),
-      price: 120,
-      resale_markup: 5.0,
-    },
-    {
-      id: "ev-labubu",
-      organizer_id: "org-popmart",
-      organizer_name: "POP MART",
-      title: "LABUBU · Macaron Series Restock",
-      subtitle: "Limited drop · 1 per buyer",
-      category: "drop",
-      venue: "Online + Hongdae flagship",
-      city: "Seoul",
-      country: "KR",
-      lat: 37.5563,
-      lng: 126.9236,
-      sale_opens_at: t - 2 * MIN, // LIVE
-      embedding: embed({ collectible: 2, gaming: 0.6, weekend: 1, global: 1 }),
-      price: 45,
-      resale_markup: 6.0,
-    },
-    {
-      id: "ev-snkrs",
-      organizer_id: "org-nike",
-      organizer_name: "SNKRS",
-      title: "Air Jordan 1 'Lost & Found'",
-      subtitle: "Global drop · regional allocation",
-      category: "drop",
-      venue: "SNKRS App",
-      city: "Global",
-      country: "US",
-      lat: 40.7128,
-      lng: -74.006,
-      sale_opens_at: t - 3 * MIN, // LIVE — second multi-seat floor
-      embedding: embed({ sneakers: 2, collectible: 1.2, global: 1.5 }),
-      price: 200,
-      resale_markup: 3.5,
-    },
-    {
-      id: "ev-indie",
-      organizer_id: "org-club",
-      organizer_name: "Club Plankton",
-      title: "Slow Static + The Hours",
-      subtitle: "Indie night · Itaewon",
-      category: "concert",
-      venue: "Club Plankton",
-      city: "Seoul",
-      country: "KR",
-      lat: 37.5345,
-      lng: 126.9946,
-      sale_opens_at: t + 20 * MIN, // upcoming — countdown UI
-      embedding: embed({ indie: 2, rock: 1, club: 1.5, weekend: 1.5 }),
-      price: 35,
-      resale_markup: 2.5,
-    },
-    {
-      id: "ev-cup-final",
-      organizer_id: "org-fa",
-      organizer_name: "Continental Cup",
-      title: "Continental Cup — Final",
-      subtitle: "Knockout · category 1",
-      category: "sports",
-      venue: "Seoul World Cup Stadium",
-      city: "Seoul",
-      country: "KR",
-      lat: 37.5683,
-      lng: 126.8973,
-      sale_opens_at: t + 30 * MIN,
-      embedding: embed({ sports: 2, arena: 1.5, global: 1 }),
-      price: 90,
-      resale_markup: 4.0,
-    },
-  ];
-
-  // capacity: hero = 1 seat (last-seat drama); others modest for live demo
-  const caps: Record<string, number> = {
-    "ev-eras-seoul": 1,
-    "ev-kpop-world": 60,
-    "ev-labubu": 1,
-    "ev-snkrs": 40,
-    "ev-indie": 24,
-    "ev-cup-final": 48,
-  };
+  // Seed catalog is derived from the company registry (lib/orgs.ts): a few
+  // event businesses, each owning its own drops, anchored to the current clock.
+  const events: EventRow[] = seedEvents(t);
+  const caps = seedCapacities();
 
   for (const ev of events) {
     const slot: Slot = {
@@ -191,6 +81,11 @@ export function createDrop(input: {
   price: number;
   organizer_name?: string;
   opens_at?: number; // epoch ms; default = immediately
+  venue?: string;
+  city?: string;
+  country?: string;
+  lat?: number;
+  lng?: number;
 }): EventRow {
   const s = store();
   const t = Date.now();
@@ -205,6 +100,10 @@ export function createDrop(input: {
     .slice(0, 24);
   // ID scheme parity with the DSQL backend (avoids length-based collisions)
   const id = `ev-custom-${t.toString(36)}-${slug || "drop"}`;
+  // Location comes from the organizer's map pin; fall back to a Seoul default
+  // only when nothing was provided (keeps older callers working).
+  const lat = Number.isFinite(input.lat) ? (input.lat as number) : 37.5563;
+  const lng = Number.isFinite(input.lng) ? (input.lng as number) : 126.976;
   const ev: EventRow = {
     id,
     organizer_id: "org-you",
@@ -212,11 +111,11 @@ export function createDrop(input: {
     title: input.title || "Untitled drop",
     subtitle: "Your drop · just created",
     category: input.category,
-    venue: "Your venue",
-    city: "Seoul",
-    country: "KR",
-    lat: 37.5563,
-    lng: 126.976,
+    venue: input.venue?.trim() || "Your venue",
+    city: input.city?.trim() || "Seoul",
+    country: input.country?.trim() || "KR",
+    lat,
+    lng,
     sale_opens_at: opensAt,
     embedding: embedQuery(`${input.title} ${input.category}`),
     price: Math.max(1, input.price),

@@ -3,6 +3,18 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eyebrow } from "@/components/ui";
+import { MapPicker } from "@/components/MapPicker";
+
+// Quick-jump cities for the drop location picker (organizer can still drag the
+// pin anywhere). Coords match the seed companies so created + seed drops share
+// one coordinate space for PostGIS "near me" discovery.
+const CITY_PRESETS: { label: string; city: string; country: string; lat: number; lng: number }[] = [
+  { label: "Seoul", city: "Seoul", country: "KR", lat: 37.5563, lng: 126.976 },
+  { label: "New York", city: "New York", country: "US", lat: 40.7128, lng: -74.006 },
+  { label: "Los Angeles", city: "Los Angeles", country: "US", lat: 34.0522, lng: -118.2437 },
+  { label: "London", city: "London", country: "GB", lat: 51.5074, lng: -0.1278 },
+  { label: "Tokyo", city: "Tokyo", country: "JP", lat: 35.6762, lng: 139.6503 },
+];
 
 interface EvOpt {
   id: string;
@@ -356,6 +368,19 @@ function CreateDrop({
   const [openMode, setOpenMode] = useState<"now" | "1m" | "5m" | "custom">("now");
   const [customDt, setCustomDt] = useState("");
   const [busy, setBusy] = useState(false);
+  // drop location — venue text + city + a map pin (default Seoul)
+  const [venue, setVenue] = useState("");
+  const [city, setCity] = useState(CITY_PRESETS[0].city);
+  const [country, setCountry] = useState(CITY_PRESETS[0].country);
+  const [lat, setLat] = useState(CITY_PRESETS[0].lat);
+  const [lng, setLng] = useState(CITY_PRESETS[0].lng);
+
+  function jumpCity(p: (typeof CITY_PRESETS)[number]) {
+    setCity(p.city);
+    setCountry(p.country);
+    setLat(p.lat);
+    setLng(p.lng);
+  }
 
   function opensAtMs(): number | undefined {
     const now = Date.now();
@@ -371,7 +396,7 @@ function CreateDrop({
     const opens_at = opensAtMs();
     const res = await fetch("/api/org/create", {
       method: "POST",
-      body: JSON.stringify({ title, category: PRESETS[preset].category, capacity, price, opens_at, organizer_name: orgName ?? undefined }),
+      body: JSON.stringify({ title, category: PRESETS[preset].category, capacity, price, opens_at, organizer_name: orgName ?? undefined, venue, city, country, lat, lng }),
     });
     const d = await res.json();
     setBusy(false);
@@ -422,6 +447,25 @@ function CreateDrop({
             <input type="number" value={price} min={1} onChange={(e) => setPrice(Number(e.target.value))} className="num focusable" style={inp} />
           </div>
         </div>
+
+        <label className="eyebrow" style={{ display: "block", marginTop: 14, marginBottom: 6 }}>location</label>
+        <div className="flex gap-3">
+          <input value={venue} onChange={(e) => setVenue(e.target.value)} placeholder="venue (e.g. KSPO Dome)" className="focusable" style={{ ...inp, marginTop: 0, flex: 1.4 }} />
+          <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="city" className="focusable" style={{ ...inp, marginTop: 0, flex: 1 }} />
+        </div>
+        <div className="flex flex-wrap gap-2" style={{ marginTop: 8 }}>
+          {CITY_PRESETS.map((p) => (
+            <button key={p.label} onClick={() => jumpCity(p)} className="mono focusable" style={{ fontSize: 11.5, padding: "5px 10px", cursor: "pointer", borderRadius: 7, border: `1.5px solid ${city === p.city ? "var(--purple)" : "var(--pink-line)"}`, background: city === p.city ? "var(--purple)" : "var(--cream)", color: city === p.city ? "#fff" : "var(--pk-ink2)" }}>
+              {p.label}
+            </button>
+          ))}
+        </div>
+        <div style={{ marginTop: 8 }}>
+          <MapPicker lat={lat} lng={lng} onChange={(la, ln) => { setLat(la); setLng(ln); }} height={180} />
+        </div>
+        <p className="mono" style={{ fontSize: 10.5, color: "var(--pk-ink2)", marginTop: 6 }}>
+          Drag or click the pin — this is where fans find your drop “near me”. <span className="num">{lat.toFixed(3)}, {lng.toFixed(3)}</span>
+        </p>
 
         <label className="eyebrow" style={{ display: "block", marginTop: 14, marginBottom: 6 }}>on-sale opens</label>
         <div className="flex flex-wrap gap-2">

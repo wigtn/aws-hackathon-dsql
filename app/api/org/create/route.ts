@@ -20,6 +20,12 @@ export async function POST(req: NextRequest) {
       : undefined;
   if (!title) return NextResponse.json({ error: "title required" }, { status: 400 });
 
+  // Organizer-set location (map pin). lat/lng are validated to real ranges so a
+  // bad client value can't poison PostGIS radius queries.
+  const lat = Number(body.lat);
+  const lng = Number(body.lng);
+  const validPin = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+
   const ev = await getData().createDrop({
     title,
     category,
@@ -27,11 +33,18 @@ export async function POST(req: NextRequest) {
     price,
     organizer_name: body.organizer_name,
     opens_at,
+    venue: typeof body.venue === "string" ? body.venue.slice(0, 80) : undefined,
+    city: typeof body.city === "string" ? body.city.slice(0, 60) : undefined,
+    country: typeof body.country === "string" ? body.country.slice(0, 2).toUpperCase() : undefined,
+    lat: validPin ? lat : undefined,
+    lng: validPin ? lng : undefined,
   });
   return NextResponse.json({
     ok: true,
     event_id: ev.id,
     title: ev.title,
     sale_opens_at: ev.sale_opens_at,
+    city: ev.city,
+    venue: ev.venue,
   });
 }
