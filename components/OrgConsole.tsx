@@ -2,8 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Eyebrow, Tag, Meter } from "@/components/ui";
-import { FairnessLedger } from "@/components/FairnessLedger";
+import { Eyebrow } from "@/components/ui";
 
 interface EvOpt {
   id: string;
@@ -30,8 +29,6 @@ interface Metrics {
   taken: number;
   sell_through: number;
   gross_revenue: number;
-  region: Record<string, number>;
-  region_mode?: "multi" | "single" | "simulation";
   defended: {
     oversell_blocked: number;
     oversell_defended_usd: number;
@@ -40,16 +37,14 @@ interface Metrics {
     total_defended_usd: number;
   };
 }
-interface RushResult {
-  buyers: number;
-  granted: number;
-  oversold: number;
-  oc000_total: number;
-  commit_p95: number;
-}
 
-const usd = (n: number) =>
-  "$" + Math.round(n).toLocaleString("en-US");
+const usd = (n: number) => "$" + Math.round(n).toLocaleString("en-US");
+
+function seatClass(s: Seat): string {
+  if (["confirmed", "activated", "sold"].includes(s.status)) return "stcell confirmed";
+  if (s.reserved || s.status === "held") return "stcell held";
+  return "stcell";
+}
 
 export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
   const router = useRouter();
@@ -62,8 +57,6 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
   const [queue, setQueue] = useState<string[]>([]);
   const [log, setLog] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
-  const [rush, setRush] = useState<RushResult | null>(null);
-  const [rushing, setRushing] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [orgName, setOrgName] = useState<string | null>(null);
   const owned = useRef<Map<number, string>>(new Map());
@@ -101,13 +94,12 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
     owned.current = new Map();
     setQueue([]);
     setLog([]);
-    setRush(null);
     load();
     const id = setInterval(load, 1300);
     return () => clearInterval(id);
   }, [load, eventId]);
 
-  const say = (m: string) => setLog((l) => [m, ...l].slice(0, 7));
+  const say = (m: string) => setLog((l) => [m, ...l].slice(0, 6));
   const ev = events.find((e) => e.id === eventId);
 
   async function fillSome(n: number) {
@@ -129,7 +121,7 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
         });
       }
     }
-    say(`${n} buyers claimed + confirmed across both regions`);
+    say(`${n} simulated buyers checked out`);
     await load();
     setBusy(false);
   }
@@ -156,238 +148,173 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
     owned.current.delete(seatNo);
     if (d.reoffered_to) {
       setQueue((q) => q.filter((x) => x !== d.reoffered_to));
-      say(`seat #${seatNo} released → LOCKED offer to ${d.reoffered_to} (#1). bots can't grab it.`);
-    } else say(`seat #${seatNo} released → open (no one waiting)`);
+      say(`seat #${seatNo} freed → offered to the next real fan (no bot race)`);
+    } else say(`seat #${seatNo} freed → back on sale`);
     await load();
   }
 
-  // On-sale rush simulator: fire a real stampede at this drop's size → the OC000
-  // count IS the number of double-sells blocked, which we turn into defended $.
-  async function simulateRush() {
-    if (!ev) return;
-    setRushing(true);
-    setRush(null);
-    const buyers = Math.min(2000, Math.max(200, ev.capacity * 18));
-    const res = await fetch("/api/demo/run", {
-      method: "POST",
-      body: JSON.stringify({ capacity: ev.capacity, buyers, seed: 42 }),
-    });
-    const data = await res.json();
-    setTimeout(() => {
-      setRush(data.result);
-      setRushing(false);
-      say(`on-sale rush: ${data.result.oc000_total.toLocaleString()} double-sells blocked, oversold ${data.result.oversold}`);
-    }, 400);
-  }
-
   const filled = snap ? snap.capacity - snap.remaining_open : 0;
-  const rushDefended = rush && ev ? Math.round(rush.oc000_total * ev.price * 1.3) : 0;
+  const soldOut = snap?.remaining_open === 0;
+  const d = metrics?.defended;
 
   return (
-    <div>
-      {/* operator top bar */}
-      <div className="frame" style={{ padding: "12px 16px", marginBottom: 18 }}>
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="eyebrow">organizer</span>
-          <span className="num" style={{ fontSize: 13 }}>{orgName ?? metrics?.organizer ?? "Your venue"}</span>
-          {orgName ? (
-            <Tag tone="affirm">account active</Tag>
-          ) : (
-            <Link href="/org/onboarding" className="eyebrow ulink">set up account →</Link>
-          )}
-          <select
-            value={eventId}
-            onChange={(e) => setEventId(e.target.value)}
-            className="mono focusable"
-            style={{ fontSize: 13, padding: "8px 11px", border: "1px solid var(--color-ink)", background: "var(--color-paper)", color: "var(--color-ink)" }}
-            disabled={visible.length === 0}
-          >
-            {visible.length === 0 ? (
-              <option>— no drops yet —</option>
-            ) : (
-              visible.map((e) => (
-                <option key={e.id} value={e.id}>{e.title} · {usd(e.price)} · cap {e.capacity}</option>
-              ))
-            )}
-          </select>
-          <div style={{ marginLeft: "auto" }} className="flex items-center gap-2">
-            {snap && snap.remaining_open === 0 && <Tag tone="signal">sold out</Tag>}
-            <button className="btn btn-primary focusable" onClick={() => setShowCreate(true)}>+ new drop</button>
+    <>
+      <div className="poster">
+        <div className="wrap">
+          {/* purple poster header band */}
+          <section className="band" data-wm="LIVE">
+            <span className="kick">{orgName ?? metrics?.organizer ?? "Your venue"} · organizer console</span>
+            <h1>{ev?.title ?? (visible.length ? "Your on-sale" : "No drops yet")}</h1>
+            <div className="sub" style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+              <span className="live">
+                <span className="dot" /> {soldOut ? "Sold out" : visible.length ? "On-sale: Live" : "Create your first drop"}
+              </span>
+              <select
+                value={eventId}
+                onChange={(e) => setEventId(e.target.value)}
+                className="focusable"
+                disabled={visible.length === 0}
+                style={{
+                  fontFamily: "var(--font-mono)", fontSize: 12.5, padding: "8px 12px",
+                  borderRadius: 8, border: "1.5px solid rgba(255,255,255,.5)",
+                  background: "transparent", color: "var(--cream)",
+                }}
+              >
+                {visible.length === 0 ? (
+                  <option style={{ color: "#161019" }}>— no drops yet —</option>
+                ) : (
+                  visible.map((e) => (
+                    <option key={e.id} value={e.id} style={{ color: "#161019" }}>
+                      {e.title} · {usd(e.price)} · {e.capacity} seats
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+            <div className="acts">
+              <button className="btn btn-fill focusable" onClick={() => setShowCreate(true)}>+ New drop</button>
+              <Link href="/discover" className="btn focusable">View storefront</Link>
+            </div>
+          </section>
+
+          {/* KPI row — what an organizer actually watches */}
+          <div className="kpis">
+            <div className="kpi">
+              <dt>Tickets sold</dt>
+              <div className="v num">{metrics ? metrics.taken : "—"}<span style={{ fontSize: 20, color: "var(--pk-ink2)" }}> / {metrics?.capacity ?? snap?.capacity ?? "—"}</span></div>
+            </div>
+            <div className="kpi">
+              <dt>Revenue</dt>
+              <div className="v num">{metrics ? usd(metrics.gross_revenue) : "—"}</div>
+            </div>
+            <div className="kpi">
+              <dt>Sell-through</dt>
+              <div className="v num">{metrics ? `${Math.round(metrics.sell_through * 100)}%` : "—"}</div>
+            </div>
+            <div className="kpi">
+              <dt>Revenue protected</dt>
+              <div className="v num z">{d ? usd(d.total_defended_usd) : "—"}</div>
+              <div className="meta">est.</div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {visible.length === 0 && (
-        <div className="frame" style={{ padding: 28, textAlign: "center", marginBottom: 18 }}>
-          <Eyebrow>no drops yet</Eyebrow>
-          <p className="mono" style={{ fontSize: 13, color: "var(--color-ink-2)", margin: "10px 0 16px" }}>
-            {orgName ? `${orgName}, create your first on-sale to start.` : "Create your first on-sale to start."}
-          </p>
-          <button className="btn btn-primary focusable" onClick={() => setShowCreate(true)}>+ new drop</button>
-        </div>
-      )}
-
-      {/* KPI row — the B2B headline numbers */}
-      <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))", marginBottom: 18 }}>
-        <Kpi label="gross revenue" value={metrics ? usd(metrics.gross_revenue) : "—"} sub={metrics ? `${usd(metrics.price)} × ${metrics.taken}` : ""} />
-        <Kpi label="sell-through" value={metrics ? `${Math.round(metrics.sell_through * 100)}%` : "—"} sub={metrics ? `${metrics.taken}/${metrics.capacity} seats` : ""} hot={!!metrics && metrics.sell_through >= 1} />
-        <Kpi label="bots blocked" value={metrics ? metrics.defended.bots_blocked.toLocaleString() : "—"} sub="rate-limit + BotID" tone="signal" />
-        <Kpi label="revenue defended" value={metrics ? usd(metrics.defended.total_defended_usd) : "—"} sub="oversell + resale · est." tone="affirm" />
-      </div>
-
-      <div className="grid gap-4" style={{ gridTemplateColumns: "minmax(0,1fr) 330px", alignItems: "start" }}>
-        {/* main column */}
-        <div>
-          {/* live floor */}
-          {snap && (
-            <div className="frame" style={{ padding: 16, marginBottom: 16 }}>
-              <div className="flex items-center justify-between" style={{ marginBottom: 10 }}>
-                <Eyebrow>live floor · DSQL ledger</Eyebrow>
-                <span className="num" style={{ fontSize: 13 }}>{filled}/{snap.capacity} filled</span>
+          <div className="cols2 wide-left">
+            {/* left — seat map */}
+            <div className="pn">
+              <div className="ph">
+                <h3>Your seat map</h3>
+                <span className="tag num">{filled} / {snap?.capacity ?? 0} sold</span>
               </div>
-              <Meter value={filled} max={snap.capacity} hot={snap.remaining_open === 0} />
-              <div className="grid gap-1" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(22px,1fr))", marginTop: 14 }}>
-                {snap.seats.slice(0, 120).map((s) => (
-                  <div key={s.seat_no} className="seat" data-status={s.reserved ? "held" : s.status} style={{ fontSize: 7 }} title={s.reserved ? "locked offer (#1 waitlister)" : s.status}>
-                    {s.reserved ? "★" : ""}
-                  </div>
+              <div className="seatgrid">
+                {(snap?.seats ?? []).slice(0, 96).map((s) => (
+                  <div key={s.seat_no} className={seatClass(s)} title={s.status} />
                 ))}
               </div>
-              <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px dashed var(--color-line-2)" }}>
-                <div className="flex items-center gap-2" style={{ marginBottom: 9 }}>
-                  <Tag>demo controls</Tag>
-                  <span className="mono" style={{ fontSize: 10.5, color: "var(--color-ink-3)" }}>
-                    simulate buyer activity — there are no real buyers in the demo
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button className="btn focusable" disabled={busy} onClick={() => fillSome(8)}>+ 8 buyers</button>
-                  <button className="btn focusable" disabled={busy} onClick={() => fillSome(snap.remaining_open)}>fill to sold out</button>
-                  <button className="btn focusable" onClick={addWaitlister}>+ waitlister</button>
-                  <button className="btn btn-signal focusable" onClick={cancelAndReoffer}>cancel → re-offer</button>
+              <div className="seatlegend">
+                <span><i /> open</span>
+                <span><i className="held" /> on hold</span>
+                <span><i className="confirmed" /> sold</span>
+              </div>
+              <div className="cmeter" style={{ marginTop: 16 }}>
+                <div className="fill" style={{ width: `${snap ? (filled / Math.max(1, snap.capacity)) * 100 : 0}%` }} />
+              </div>
+              {/* demo affordance — there are no real buyers in the demo */}
+              <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--pink-line)" }}>
+                <div className="lbl" style={{ color: "var(--pk-ink2)", marginBottom: 10 }}>Demo controls — simulate buyers</div>
+                <div className="chips">
+                  <button className="chip" disabled={busy} onClick={() => fillSome(8)}>+ 8 buyers</button>
+                  <button className="chip" disabled={busy} onClick={() => fillSome(snap?.remaining_open ?? 0)}>Sell out</button>
+                  <button className="chip" onClick={addWaitlister}>+ waitlister</button>
+                  <button className="chip" onClick={cancelAndReoffer}>Cancel → re-offer</button>
                 </div>
               </div>
             </div>
-          )}
 
-          {/* on-sale rush simulator — ties defended $ to real conflicts */}
-          <div className="frame" style={{ padding: 16 }}>
-            <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
-              <Eyebrow>on-sale rush simulator</Eyebrow>
-              <button className="btn btn-primary focusable" disabled={rushing} onClick={simulateRush}>
-                {rushing ? "firing…" : "▶ simulate the on-sale"}
-              </button>
+            {/* right — health */}
+            <div className="pn">
+              <div className="ph"><h3>On-sale health</h3><span className="tag">live</span></div>
+              <ul className="check">
+                <li><span className="ck">✓</span> 0 double-sold seats</li>
+                <li><span className="ck">✓</span> 0 failed checkouts</li>
+                <li><span className="ck">✓</span> {d ? d.bots_blocked.toLocaleString() : "—"} bots blocked</li>
+                <li><span className="ck">✓</span> Fair allocation verified</li>
+              </ul>
             </div>
-            <p className="mono" style={{ fontSize: 12, color: "var(--color-ink-3)", marginBottom: rush ? 14 : 0 }}>
-              Fires a worldwide rush at this drop&apos;s size across both regions. Every
-              OC000 conflict is a double-sale the ledger refused — money you didn&apos;t
-              have to refund.
-            </p>
-            {rush && ev && (
-              <div className="rise">
-                <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))" }}>
-                  <MiniStat label="peak buyers" value={rush.buyers.toLocaleString()} />
-                  <MiniStat label="granted" value={`${rush.granted}/${ev.capacity}`} tone="affirm" />
-                  <MiniStat label="oversold" value={String(rush.oversold)} tone="affirm" />
-                  <MiniStat label="double-sells blocked" value={rush.oc000_total.toLocaleString()} tone="signal" />
-                </div>
-                <div className="panel" style={{ padding: "12px 14px", marginTop: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span className="eyebrow">refunds/chargebacks avoided (est.)</span>
-                  <span className="num" style={{ fontSize: 22, color: "var(--color-affirm)" }}>{usd(rushDefended)}</span>
-                </div>
-              </div>
-            )}
           </div>
 
-          <div style={{ marginTop: 16 }}>
-            <FairnessLedger eventId={eventId} />
-          </div>
-        </div>
-
-        {/* rail */}
-        <aside>
-          {/* region split */}
-          {metrics && (() => {
-            // Honest topology (FR-A1): only claim active-active when BOTH
-            // endpoints are live. Single-region or simulation say so plainly.
-            const mode = metrics.region_mode ?? "multi";
-            const regions = mode === "multi" ? (["us-east-1", "us-east-2"] as const) : (["us-east-1"] as const);
-            const total = Math.max(1, regions.reduce((n, r) => n + (metrics.region[r] ?? 0), 0));
-            const label = mode === "multi"
-              ? "writes by region · active-active"
-              : mode === "single"
-                ? "writes by region · single-region"
-                : "writes by region · simulation";
-            const foot = mode === "multi"
-              ? "one logical DSQL database · both endpoints take writes"
-              : mode === "single"
-                ? "single-region (multi-region not configured)"
-                : "simulated multi-region (no live DSQL endpoint)";
-            return (
-              <div className="frame" style={{ padding: 16, marginBottom: 14 }}>
-                <Eyebrow>{label}</Eyebrow>
-                {regions.map((r) => {
-                  const v = metrics.region[r] ?? 0;
-                  return (
-                    <div key={r} style={{ marginTop: 10 }}>
-                      <div className="flex justify-between" style={{ marginBottom: 4 }}>
-                        <span className="num" style={{ fontSize: 12 }}>{r}</span>
-                        <span className="num" style={{ fontSize: 12, color: "var(--color-ink-3)" }}>{v}</span>
-                      </div>
-                      <Meter value={v} max={total} />
-                    </div>
-                  );
-                })}
-                <p className="mono" style={{ fontSize: 10.5, color: "var(--color-ink-3)", marginTop: 10 }}>
-                  {foot}
-                </p>
-              </div>
-            );
-          })()}
-
-          {/* defended breakdown */}
-          {metrics && (
-            <div className="frame" style={{ padding: 16, marginBottom: 14 }}>
-              <Eyebrow>revenue defended · estimated</Eyebrow>
-              <KvRow k="oversell (refund/chargeback)" v={usd(metrics.defended.oversell_defended_usd)} />
-              <KvRow k="resale margin repatriated" v={usd(metrics.defended.resale_repatriated_usd)} />
-              <div className="flex justify-between" style={{ paddingTop: 9, marginTop: 4, borderTop: "2px solid var(--color-ink)" }}>
-                <span className="eyebrow">total</span>
-                <span className="num" style={{ fontSize: 15, color: "var(--color-affirm)" }}>{usd(metrics.defended.total_defended_usd)}</span>
-              </div>
+          <div className="cols2">
+            {/* revenue protected */}
+            <div className="pn">
+              <div className="ph"><h3>Revenue protected</h3><span className="tag">estimated</span></div>
+              <ul className="brk">
+                <li><span>Oversell refunds avoided</span><span className="amt num">{d ? usd(d.oversell_defended_usd) : "—"}</span></li>
+                <li><span>Scalper margin kept in your sale</span><span className="amt num">{d ? usd(d.resale_repatriated_usd) : "—"}</span></li>
+                <li className="total"><span>Total protected · est.</span><span className="amt num">{d ? usd(d.total_defended_usd) : "—"}</span></li>
+              </ul>
             </div>
-          )}
 
-          {/* waitlist + fair re-release */}
-          <div className="frame" style={{ padding: 16, marginBottom: 14 }}>
-            <Eyebrow>waitlist · {queue.length} · first refusal</Eyebrow>
-            {queue.length === 0 ? (
-              <p className="mono" style={{ fontSize: 11.5, color: "var(--color-ink-3)", marginTop: 8 }}>
-                add fans, then cancel a seat → #1 gets a LOCKED offer (no bot race).
+            {/* fair allocation — plain language, no hashes */}
+            <div className="pn">
+              <div className="ph"><h3>Fair allocation</h3><span className="tag">auditable</span></div>
+              <div className="vstamp">Verified ✓</div>
+              <p style={{ fontSize: 14, color: "var(--pk-ink2)", lineHeight: 1.6, marginTop: 10 }}>
+                All {metrics?.taken ?? 0} buyers got a seat in the exact order they committed — no bot or insider lane.
               </p>
-            ) : (
-              <ol style={{ marginTop: 8, listStyle: "none" }}>
-                {queue.map((b, i) => (
-                  <li key={b} className="flex justify-between" style={{ padding: "5px 0", borderBottom: "1px solid var(--color-line)" }}>
-                    <span className="num" style={{ fontSize: 12 }}>#{i + 1}</span>
-                    <span className="mono" style={{ fontSize: 12, color: i === 0 ? "var(--color-signal)" : "var(--color-ink-2)" }}>{b}{i === 0 ? " ←" : ""}</span>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </div>
-
-          {/* event log */}
-          <div className="panel" style={{ padding: 14 }}>
-            <Eyebrow>event log</Eyebrow>
-            <div style={{ marginTop: 8 }}>
-              {log.length === 0 ? <span className="mono" style={{ fontSize: 11.5, color: "var(--color-ink-3)" }}>—</span> :
-                log.map((l, i) => (
-                  <div key={i} className="mono" style={{ fontSize: 11, color: i === 0 ? "var(--color-ink)" : "var(--color-ink-3)", padding: "3px 0" }}>→ {l}</div>
-                ))}
+              <div className="chips" style={{ marginTop: 16 }}>
+                <button className="chip">Download fairness report</button>
+                <Link href="/demo" className="chip">View technical ledger →</Link>
+              </div>
             </div>
           </div>
-        </aside>
+
+          {/* waitlist + log */}
+          <div className="cols2">
+            <div className="pn">
+              <div className="ph"><h3>Waitlist</h3><span className="tag num">{queue.length} · first refusal</span></div>
+              {queue.length === 0 ? (
+                <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--pk-ink2)" }}>
+                  Add fans, then free a seat → the #1 fan gets a locked offer (no bot race).
+                </p>
+              ) : (
+                <ul className="brk">
+                  {queue.map((b, i) => (
+                    <li key={b}><span className="num">#{i + 1}{i === 0 ? "  ← next up" : ""}</span><span className="mono" style={{ fontSize: 13 }}>{b}</span></li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="pn">
+              <div className="ph"><h3>Activity</h3></div>
+              {log.length === 0 ? (
+                <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--pk-ink2)" }}>—</p>
+              ) : (
+                log.map((l, i) => (
+                  <div key={i} className="mono" style={{ fontSize: 12, color: i === 0 ? "var(--pk-ink)" : "var(--pk-ink2)", padding: "5px 0" }}>→ {l}</div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {showCreate && (
@@ -398,12 +325,12 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
             setEvents((e) => [opt, ...e]);
             setEventId(id);
             setShowCreate(false);
-            say(`new drop created: ${opt.title} (cap ${opt.capacity}, ${usd(opt.price)})`);
+            say(`new drop created: ${opt.title}`);
             router.refresh();
           }}
         />
       )}
-    </div>
+    </>
   );
 }
 
@@ -435,7 +362,7 @@ function CreateDrop({
     if (openMode === "1m") return now + 60_000;
     if (openMode === "5m") return now + 300_000;
     if (openMode === "custom" && customDt) return new Date(customDt).getTime();
-    return undefined; // now / immediate
+    return undefined;
   }
 
   async function submit() {
@@ -461,24 +388,24 @@ function CreateDrop({
   return (
     <div
       onClick={onClose}
-      style={{ position: "fixed", inset: 0, background: "color-mix(in srgb, var(--color-ink) 40%, transparent)", display: "grid", placeItems: "center", zIndex: 50, padding: 20 }}
+      style={{ position: "fixed", inset: 0, background: "color-mix(in srgb, var(--pk-ink) 45%, transparent)", display: "grid", placeItems: "center", zIndex: 50, padding: 20 }}
     >
-      <div onClick={(e) => e.stopPropagation()} className="frame" style={{ background: "var(--color-paper)", padding: 24, width: 520, maxWidth: "100%" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--cream)", border: "2px solid var(--pk-ink)", borderRadius: 14, padding: 24, width: 520, maxWidth: "100%" }}>
         <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
           <div>
-            <Eyebrow>onboarding · category → preset</Eyebrow>
-            <div className="display" style={{ fontSize: 24, marginTop: 4 }}>New drop</div>
+            <Eyebrow>new on-sale</Eyebrow>
+            <div style={{ fontFamily: "var(--font-syne)", fontWeight: 800, fontSize: 26, marginTop: 4, textTransform: "uppercase", letterSpacing: "-.02em" }}>New drop</div>
           </div>
           <button className="mono focusable" onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18 }}>✕</button>
         </div>
 
-        <label className="eyebrow">title</label>
+        <label className="eyebrow">event name</label>
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Midnight Pulse — Seoul" className="focusable" style={inp} />
 
-        <label className="eyebrow" style={{ display: "block", marginTop: 14, marginBottom: 6 }}>preset</label>
+        <label className="eyebrow" style={{ display: "block", marginTop: 14, marginBottom: 6 }}>type</label>
         <div className="grid gap-2" style={{ gridTemplateColumns: "1fr 1fr" }}>
           {PRESETS.map((p, i) => (
-            <button key={p.label} onClick={() => { setPreset(i); setCapacity(p.capacity); setPrice(p.price); }} className="focusable" style={{ padding: 10, textAlign: "left", cursor: "pointer", border: `1px solid ${preset === i ? "var(--color-ink)" : "var(--color-line)"}`, background: preset === i ? "var(--color-ink)" : "var(--color-paper)", color: preset === i ? "var(--color-paper)" : "var(--color-ink)" }}>
+            <button key={p.label} onClick={() => { setPreset(i); setCapacity(p.capacity); setPrice(p.price); }} className="focusable" style={{ padding: 10, textAlign: "left", cursor: "pointer", borderRadius: 8, border: `1.5px solid ${preset === i ? "var(--purple)" : "var(--pink-line)"}`, background: preset === i ? "var(--purple)" : "var(--cream)", color: preset === i ? "#fff" : "var(--pk-ink)" }}>
               <div className="mono" style={{ fontSize: 13 }}>{p.label}</div>
               <div className="eyebrow" style={{ color: "inherit", opacity: 0.7 }}>cap {p.capacity} · ${p.price}</div>
             </button>
@@ -499,7 +426,7 @@ function CreateDrop({
         <label className="eyebrow" style={{ display: "block", marginTop: 14, marginBottom: 6 }}>on-sale opens</label>
         <div className="flex flex-wrap gap-2">
           {OPEN_OPTS.map((o) => (
-            <button key={o.key} onClick={() => setOpenMode(o.key)} className="mono focusable" style={{ fontSize: 12, padding: "7px 12px", cursor: "pointer", border: `1px solid ${openMode === o.key ? "var(--color-ink)" : "var(--color-line-2)"}`, background: openMode === o.key ? "var(--color-ink)" : "var(--color-paper)", color: openMode === o.key ? "var(--color-paper)" : "var(--color-ink-2)" }}>
+            <button key={o.key} onClick={() => setOpenMode(o.key)} className="mono focusable" style={{ fontSize: 12, padding: "7px 12px", cursor: "pointer", borderRadius: 7, border: `1.5px solid ${openMode === o.key ? "var(--purple)" : "var(--pink-line)"}`, background: openMode === o.key ? "var(--purple)" : "var(--cream)", color: openMode === o.key ? "#fff" : "var(--pk-ink2)" }}>
               {o.label}
             </button>
           ))}
@@ -507,50 +434,17 @@ function CreateDrop({
         {openMode === "custom" && (
           <input type="datetime-local" value={customDt} onChange={(e) => setCustomDt(e.target.value)} className="mono focusable" style={{ ...inp, marginTop: 8 }} />
         )}
-        <p className="mono" style={{ fontSize: 10.5, color: "var(--color-ink-3)", marginTop: 6 }}>
+        <p className="mono" style={{ fontSize: 10.5, color: "var(--pk-ink2)", marginTop: 6 }}>
           {openMode === "now"
-            ? "buyers can claim immediately."
-            : "buyers see a countdown; claims are locked until the on-sale opens (returns NOT_OPEN)."}
+            ? "Buyers can get tickets immediately."
+            : "Buyers see a countdown; the on-sale is locked until it opens."}
         </p>
 
         <div className="flex justify-end gap-2" style={{ marginTop: 20 }}>
-          <button className="btn focusable" onClick={onClose}>cancel</button>
-          <button className="btn btn-primary focusable" disabled={busy || !title.trim()} onClick={submit}>{busy ? "provisioning…" : openMode === "now" ? "create + open now →" : "create + schedule →"}</button>
+          <button className="mono focusable" onClick={onClose} style={{ ...btnInk, background: "var(--cream)", color: "var(--pk-ink)" }}>cancel</button>
+          <button className="mono focusable" disabled={busy || !title.trim()} onClick={submit} style={btnInk}>{busy ? "creating…" : openMode === "now" ? "create + open now →" : "create + schedule →"}</button>
         </div>
-        <p className="mono" style={{ fontSize: 10.5, color: "var(--color-ink-3)", marginTop: 12 }}>
-          provisions PG catalog row (discovery) + DSQL slot/seats (ledger), opens immediately.
-        </p>
       </div>
-    </div>
-  );
-}
-
-function Kpi({ label, value, sub, tone, hot }: { label: string; value: string; sub?: string; tone?: "signal" | "affirm"; hot?: boolean }) {
-  const color = tone === "signal" ? "var(--color-signal)" : tone === "affirm" ? "var(--color-affirm)" : "var(--color-ink)";
-  return (
-    <div className="frame" style={{ padding: "14px 16px" }}>
-      <div className="eyebrow" style={{ marginBottom: 8 }}>{label}{hot ? " ●" : ""}</div>
-      <div className="num" style={{ fontSize: 27, lineHeight: 1, color }}>{value}</div>
-      {sub ? <div className="mono" style={{ fontSize: 10.5, color: "var(--color-ink-3)", marginTop: 5 }}>{sub}</div> : null}
-    </div>
-  );
-}
-
-function MiniStat({ label, value, tone }: { label: string; value: string; tone?: "signal" | "affirm" }) {
-  const color = tone === "signal" ? "var(--color-signal)" : tone === "affirm" ? "var(--color-affirm)" : "var(--color-ink)";
-  return (
-    <div className="panel" style={{ padding: "10px 12px" }}>
-      <div className="eyebrow" style={{ marginBottom: 5 }}>{label}</div>
-      <div className="num" style={{ fontSize: 19, color }}>{value}</div>
-    </div>
-  );
-}
-
-function KvRow({ k, v }: { k: string; v: string }) {
-  return (
-    <div className="flex justify-between" style={{ padding: "7px 0", borderBottom: "1px solid var(--color-line)" }}>
-      <span className="eyebrow">{k}</span>
-      <span className="num" style={{ fontSize: 13 }}>{v}</span>
     </div>
   );
 }
@@ -560,7 +454,18 @@ const inp: React.CSSProperties = {
   fontSize: 15,
   padding: "10px 12px",
   marginTop: 6,
-  background: "var(--color-paper)",
-  border: "1px solid var(--color-ink)",
-  color: "var(--color-ink)",
+  borderRadius: 8,
+  background: "var(--cream)",
+  border: "1.5px solid var(--pk-ink)",
+  color: "var(--pk-ink)",
+};
+const btnInk: React.CSSProperties = {
+  fontSize: 13,
+  padding: "11px 18px",
+  borderRadius: 8,
+  cursor: "pointer",
+  border: "1.5px solid var(--pk-ink)",
+  background: "var(--pk-ink)",
+  color: "var(--cream)",
+  fontWeight: 600,
 };

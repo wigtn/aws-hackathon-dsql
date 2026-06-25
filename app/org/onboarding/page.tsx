@@ -1,8 +1,6 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eyebrow, Tag } from "@/components/ui";
 
 const CATEGORIES = ["concert", "sports", "drop", "event"] as const;
 
@@ -11,15 +9,15 @@ const PLANS = [
     key: "self",
     name: "Self-serve",
     price: "5% per ticket",
-    blurb: "Create drops instantly. Pay only when you sell.",
-    points: ["instant onboarding", "up to 5k seats / drop", "standard anti-scalp", "email support"],
+    blurb: "Create on-sales instantly. Pay only when you sell.",
+    points: ["instant setup", "up to 5k seats / drop", "anti-scalp included", "email support"],
   },
   {
     key: "enterprise",
     name: "Enterprise",
     price: "contract",
     blurb: "For stadium on-sales and global drops.",
-    points: ["custom seat limits", "dedicated multi-region capacity", "advanced BotID + allowlists", "SLA + solutions engineer"],
+    points: ["custom seat limits", "dedicated capacity", "advanced bot defense", "SLA + solutions engineer"],
   },
 ] as const;
 
@@ -45,78 +43,68 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="shell" style={{ paddingTop: 36, maxWidth: 920 }}>
-      <Link href="/org/console" className="eyebrow ulink" style={{ borderBottom: "none" }}>
-        ← organizer console
-      </Link>
-
-      <Eyebrow>for event businesses · artists · brands · promoters · ticket sellers</Eyebrow>
-      <h1 className="display" style={{ fontSize: "clamp(34px,5vw,52px)", marginTop: 12 }}>
-        Sell on OpenSlot.
-      </h1>
-      <p className="mono" style={{ fontSize: 13.5, color: "var(--color-ink-3)", margin: "12px 0 30px", maxWidth: 620 }}>
-        Run your on-sale on a seat ledger that takes a worldwide rush with zero
-        oversell and keeps scalpers out. Set up your organizer account, pick a plan,
-        and create your first drop.
-      </p>
-
-      <div className="grid gap-8" style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", alignItems: "start" }}>
-        {/* form */}
-        <div className="frame" style={{ padding: 22 }}>
-          <Eyebrow>organizer account</Eyebrow>
-          <div style={{ marginTop: 14 }}>
-            <label className="eyebrow">organization name</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Hallyu Touring" className="focusable" style={inp} />
-          </div>
-          <div style={{ marginTop: 14 }}>
-            <label className="eyebrow">primary category</label>
-            <select value={category} onChange={(e) => setCategory(e.target.value as typeof category)} className="mono focusable" style={inp}>
-              {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div style={{ marginTop: 14 }}>
-            <label className="eyebrow">billing contact</label>
-            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ops@yourvenue.com" className="mono focusable" style={inp} />
-          </div>
-
-          <label className="flex items-start gap-2" style={{ marginTop: 18, cursor: "pointer" }}>
-            <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} style={{ marginTop: 3 }} />
-            <span className="mono" style={{ fontSize: 12, color: "var(--color-ink-2)", lineHeight: 1.5 }}>
-              I agree to the OpenSlot organizer terms, fee schedule, and payout/KYC
-              verification before first payout.
-            </span>
-          </label>
-
-          <button className="btn btn-primary focusable" disabled={!ready} onClick={submit} style={{ marginTop: 18, width: "100%" }}>
-            {plan === "enterprise" ? "request enterprise contract →" : "create organizer account →"}
-          </button>
-          <p className="mono" style={{ fontSize: 10.5, color: "var(--color-ink-3)", marginTop: 10 }}>
-            demo: account is a local session. Production = real auth + KYC + payouts (post-MVP).
+    <div className="poster">
+      <div className="wrap">
+        <section className="band" data-wm="SELL">
+          <span className="kick">For artists, brands, promoters &amp; ticket sellers</span>
+          <h1>Start an on-sale.</h1>
+          <p className="sub">
+            Run your on-sale with <b>zero oversell</b>, scalpers priced out, and the revenue you&apos;d
+            lose to crashes defended. Set up your account, pick a plan, and create your first drop.
           </p>
-        </div>
+        </section>
 
-        {/* plan picker */}
-        <div>
-          <Eyebrow>plan</Eyebrow>
-          <div className="grid gap-3" style={{ marginTop: 12 }}>
-            {PLANS.map((p) => (
-              <button
-                key={p.key}
-                onClick={() => setPlan(p.key)}
-                className="frame focusable"
-                style={{ textAlign: "left", padding: 16, cursor: "pointer", background: plan === p.key ? "var(--color-paper-2)" : "var(--color-paper)", borderColor: plan === p.key ? "var(--color-ink)" : "var(--color-line)", borderWidth: plan === p.key ? 2 : 1 }}
-              >
-                <div className="flex items-baseline justify-between">
-                  <span className="display" style={{ fontSize: 20 }}>{p.name}</span>
-                  <span className="num" style={{ fontSize: 13, color: plan === p.key ? "var(--color-ink)" : "var(--color-ink-3)" }}>{p.price}</span>
-                </div>
-                <div className="mono" style={{ fontSize: 12, color: "var(--color-ink-3)", margin: "6px 0 10px" }}>{p.blurb}</div>
-                <ul className="mono" style={{ fontSize: 11.5, color: "var(--color-ink-2)", lineHeight: 1.7, listStyle: "none" }}>
-                  {p.points.map((pt) => <li key={pt}>· {pt}</li>)}
-                </ul>
-                {plan === p.key && <div style={{ marginTop: 10 }}><Tag tone="solid">selected</Tag></div>}
-              </button>
-            ))}
+        <div className="cols2" style={{ alignItems: "start" }}>
+          {/* form */}
+          <div className="pn">
+            <div className="ph"><h3>Your account</h3></div>
+            <div className="knob" style={{ marginBottom: 14 }}>
+              <label>Organization name</label>
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Hallyu Touring" className="focusable" style={inp} />
+            </div>
+            <div className="knob" style={{ marginBottom: 14 }}>
+              <label>Primary category</label>
+              <select value={category} onChange={(e) => setCategory(e.target.value as typeof category)} className="focusable" style={inp}>
+                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div className="knob">
+              <label>Billing contact</label>
+              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ops@yourvenue.com" className="focusable" style={inp} />
+            </div>
+
+            <label className="flex items-start gap-2" style={{ marginTop: 18, cursor: "pointer" }}>
+              <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} style={{ marginTop: 3 }} />
+              <span className="mono" style={{ fontSize: 12, color: "var(--pk-ink2)", lineHeight: 1.5 }}>
+                I agree to the OpenSlot organizer terms, fee schedule, and payout verification before first payout.
+              </span>
+            </label>
+
+            <button className="btn btn-ink-fill focusable" disabled={!ready} onClick={submit} style={{ marginTop: 18, width: "100%", textAlign: "center", opacity: ready ? 1 : 0.45 }}>
+              {plan === "enterprise" ? "Request enterprise contract →" : "Create account →"}
+            </button>
+            <p className="mono" style={{ fontSize: 10.5, color: "var(--pk-ink2)", marginTop: 10 }}>
+              Demo: your account is a local session.
+            </p>
+          </div>
+
+          {/* plan picker */}
+          <div>
+            <div className="lbl" style={{ color: "var(--pk-ink2)", marginBottom: 12 }}>Choose a plan</div>
+            <div className="grid gap-3">
+              {PLANS.map((p) => (
+                <button key={p.key} onClick={() => setPlan(p.key)} aria-pressed={plan === p.key} className={`plan focusable${plan === p.key ? " on" : ""}`}>
+                  <div className="pt">
+                    <span className="nm">{p.name}</span>
+                    <span className="mono" style={{ fontSize: 13 }}>{p.price}</span>
+                  </div>
+                  <div className="mono" style={{ fontSize: 12, marginTop: 8, opacity: 0.8 }}>{p.blurb}</div>
+                  <ul>
+                    {p.points.map((pt) => <li key={pt}>· {pt}</li>)}
+                  </ul>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -128,8 +116,8 @@ const inp: React.CSSProperties = {
   width: "100%",
   fontSize: 15,
   padding: "11px 13px",
-  marginTop: 6,
-  background: "var(--color-paper)",
-  border: "1px solid var(--color-ink)",
-  color: "var(--color-ink)",
+  borderRadius: 8,
+  background: "var(--cream)",
+  border: "1.5px solid var(--pk-ink)",
+  color: "var(--pk-ink)",
 };

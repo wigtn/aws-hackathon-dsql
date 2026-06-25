@@ -6,29 +6,22 @@ import { ms } from "@/lib/format";
 import { Eyebrow, Tag } from "@/components/ui";
 
 type Region = "us-east-1" | "us-east-2";
-type Step = "region" | "otp" | "verify" | "claiming" | "done";
+type Step = "otp" | "verify" | "claiming" | "done";
 
 interface ClaimResult {
   ok: boolean;
   seat_no?: number;
-  region: Region;
-  attempts: number;
-  oc000: number;
   latency_ms: number;
   error?: string;
   remaining_open?: number;
 }
 
-const REGIONS: { id: Region; label: string }[] = [
-  { id: "us-east-1", label: "N. Virginia" },
-  { id: "us-east-2", label: "Ohio" },
-];
-
 export function ClaimFlow({ eventId, title }: { eventId: string; title: string }) {
   const sp = useSearchParams();
   const seat = sp.get("seat");
-  const [step, setStep] = useState<Step>("region");
-  const [region, setRegion] = useState<Region>("us-east-1");
+  const [step, setStep] = useState<Step>("otp");
+  // Routing region is chosen for the buyer — never something a fan picks.
+  const [region] = useState<Region>("us-east-1");
   const [phone, setPhone] = useState("");
   const [hint, setHint] = useState<string | null>(null);
   const [code, setCode] = useState("");
@@ -99,14 +92,11 @@ export function ClaimFlow({ eventId, title }: { eventId: string; title: string }
     <div className="frame" style={{ padding: 0, maxWidth: 560 }}>
       {/* progress rail */}
       <div className="flex" style={{ borderBottom: "1px solid var(--color-ink)" }}>
-        {["region", "identity", "claim"].map((s, i) => {
+        {["verify it's you", "get your ticket"].map((s, i) => {
           const active =
-            (i === 0 && step === "region") ||
-            (i === 1 && (step === "otp" || step === "verify")) ||
-            (i === 2 && (step === "claiming" || step === "done"));
-          const passed =
-            (i === 0 && step !== "region") ||
+            (i === 0 && (step === "otp" || step === "verify")) ||
             (i === 1 && (step === "claiming" || step === "done"));
+          const passed = i === 0 && (step === "claiming" || step === "done");
           return (
             <div
               key={s}
@@ -116,7 +106,7 @@ export function ClaimFlow({ eventId, title }: { eventId: string; title: string }
                 padding: "10px 14px",
                 background: active ? "var(--color-ink)" : "transparent",
                 color: active ? "var(--color-paper)" : passed ? "var(--color-ink)" : "var(--color-ink-3)",
-                borderRight: i < 2 ? "1px solid var(--color-line)" : "none",
+                borderRight: i < 1 ? "1px solid var(--color-line)" : "none",
               }}
             >
               {i + 1}. {s} {passed ? "✓" : ""}
@@ -131,38 +121,6 @@ export function ClaimFlow({ eventId, title }: { eventId: string; title: string }
           {title}
           {seat ? <span className="num" style={{ fontSize: 16, color: "var(--color-ink-3)" }}> · seat #{seat}</span> : null}
         </div>
-
-        {step === "region" && (
-          <div className="rise">
-            <p className="mono" style={{ fontSize: 13, color: "var(--color-ink-2)", marginBottom: 14 }}>
-              Pick the endpoint you connect through. Both are active-active on one
-              logical DSQL database — the demo proves the write is serialized either way.
-            </p>
-            <div className="grid gap-2" style={{ gridTemplateColumns: "1fr 1fr", marginBottom: 18 }}>
-              {REGIONS.map((r) => (
-                <button
-                  key={r.id}
-                  onClick={() => setRegion(r.id)}
-                  className="focusable"
-                  style={{
-                    padding: "14px",
-                    textAlign: "left",
-                    border: `1px solid ${region === r.id ? "var(--color-ink)" : "var(--color-line)"}`,
-                    background: region === r.id ? "var(--color-ink)" : "var(--color-paper)",
-                    color: region === r.id ? "var(--color-paper)" : "var(--color-ink)",
-                    cursor: "pointer",
-                  }}
-                >
-                  <div className="num" style={{ fontSize: 14 }}>{r.id}</div>
-                  <div className="eyebrow" style={{ color: "inherit", opacity: 0.7 }}>{r.label}</div>
-                </button>
-              ))}
-            </div>
-            <button className="btn btn-primary focusable" onClick={() => setStep("otp")}>
-              continue →
-            </button>
-          </div>
-        )}
 
         {step === "otp" && (
           <div className="rise">
@@ -208,9 +166,9 @@ export function ClaimFlow({ eventId, title }: { eventId: string; title: string }
 
         {step === "claiming" && (
           <div className="rise mono" style={{ fontSize: 13, color: "var(--color-ink-2)" }}>
-            <div>→ probing open seat by primary key…</div>
-            <div>→ check-and-set on read-set version…</div>
-            <div>→ committing via {region}…</div>
+            <div>→ finding your seat…</div>
+            <div>→ locking it to you…</div>
+            <div>→ confirming your ticket…</div>
           </div>
         )}
 
@@ -237,18 +195,16 @@ function Outcome({
           Seat #{result.seat_no} is yours.
         </div>
         <p className="mono" style={{ fontSize: 13, color: "var(--color-ink-3)", marginBottom: 18 }}>
-          committed via {result.region}. every other region reads “taken” instantly.
+          It&apos;s locked to you — nobody else can buy this seat.
         </p>
         <div className="panel" style={{ padding: 14, marginBottom: 18 }}>
           {[
-            ["commit latency", ms(result.latency_ms)],
-            ["attempts", String(result.attempts)],
-            ["OC000 absorbed", String(result.oc000)],
-            ["double sale", "0"],
+            ["confirmed in", ms(result.latency_ms)],
+            ["double-booked", "never"],
           ].map(([k, v], i) => (
-            <div key={k} className="flex justify-between" style={{ padding: "6px 0", borderBottom: i < 3 ? "1px solid var(--color-line)" : "none" }}>
+            <div key={k} className="flex justify-between" style={{ padding: "6px 0", borderBottom: i < 1 ? "1px solid var(--color-line)" : "none" }}>
               <span className="eyebrow">{k}</span>
-              <span className="num" style={{ fontSize: 13, color: k === "double sale" ? "var(--color-affirm)" : "var(--color-ink)" }}>{v}</span>
+              <span className="num" style={{ fontSize: 13, color: k === "double-booked" ? "var(--color-affirm)" : "var(--color-ink)" }}>{v}</span>
             </div>
           ))}
         </div>
@@ -266,8 +222,8 @@ function Outcome({
       </div>
       <p className="mono" style={{ fontSize: 13, color: "var(--color-ink-3)", marginBottom: 16 }}>
         {soldOut
-          ? "the ledger serialized every region; you weren’t double-charged for a seat that didn’t exist."
-          : `5 retries hit ${result.oc000} OC000 conflicts. seats may free up — join the queue for first refusal.`}
+          ? "Every seat sold exactly once — you were never charged for one that wasn’t there."
+          : "It’s busy right now. Seats often free up — join the queue and you’ll get first refusal."}
       </p>
       <button className="btn btn-signal focusable" disabled={busy} onClick={onWaitlist}>
         {busy ? "…" : "join waitlist (first refusal on cancels)"}
