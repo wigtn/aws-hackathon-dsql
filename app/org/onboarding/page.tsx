@@ -93,7 +93,7 @@ export default function OnboardingPage() {
             <div className="lbl" style={{ color: "var(--pk-ink2)", marginBottom: 12 }}>Choose a plan</div>
             <div className="grid gap-3">
               {PLANS.map((p) => (
-                <button key={p.key} onClick={() => setPlan(p.key)} className={`plan focusable${plan === p.key ? " on" : ""}`}>
+                <button key={p.key} onClick={() => setPlan(p.key)} aria-pressed={plan === p.key} className={`plan focusable${plan === p.key ? " on" : ""}`}>
                   <div className="pt">
                     <span className="nm">{p.name}</span>
                     <span className="mono" style={{ fontSize: 13 }}>{p.price}</span>

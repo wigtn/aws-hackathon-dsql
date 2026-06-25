@@ -28,8 +28,6 @@ interface Metrics {
   taken: number;
   sell_through: number;
   gross_revenue: number;
-  region: Record<string, number>;
-  region_mode?: "multi" | "single" | "simulation";
   defended: {
     oversell_blocked: number;
     oversell_defended_usd: number;

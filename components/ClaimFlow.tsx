@@ -11,9 +11,6 @@ type Step = "otp" | "verify" | "claiming" | "done";
 interface ClaimResult {
   ok: boolean;
   seat_no?: number;
-  region: Region;
-  attempts: number;
-  oc000: number;
   latency_ms: number;
   error?: string;
   remaining_open?: number;

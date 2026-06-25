@@ -105,7 +105,7 @@ export function DiscoverClient() {
           </div>
           <div className="chips">
             {CHIPS.map((c) => (
-              <button key={c} onClick={() => setQ(c)} className={`chip${q === c ? " on" : ""}`}>
+              <button key={c} onClick={() => setQ(c)} aria-pressed={q === c} className={`chip${q === c ? " on" : ""}`}>
                 {c}
               </button>
             ))}

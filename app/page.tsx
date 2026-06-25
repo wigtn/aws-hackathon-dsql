@@ -97,7 +97,7 @@ export default function HomePage() {
           <div className="bg">0</div>
           <div className="l">
             <h2>Ready to sell out — safely?</h2>
-            <p>Two regions · one seat · thousands of buyers · oversold stays 0</p>
+            <p>One seat · thousands of buyers · oversold stays 0</p>
           </div>
           <Link href="/org/onboarding" className="btn btn-bright focusable">
             Start your on-sale →

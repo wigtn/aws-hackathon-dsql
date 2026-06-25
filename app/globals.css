@@ -218,6 +218,8 @@ body{ background:var(--cream); background-image:none; }
 .poster .btn-ink-fill:hover{ background:var(--purple); border-color:var(--purple); }
 .poster .btn-purple{ background:var(--purple); border-color:var(--purple); color:#fff; font-weight:600; }
 .poster .btn-purple:hover{ background:var(--purple-hi); border-color:var(--purple-hi); }
+.poster .btn-bright{ background:var(--bright); border-color:var(--bright); color:var(--pk-ink); font-weight:600; }
+.poster .btn-bright:hover{ background:#fff; border-color:#fff; }
 
 .poster .hero{ background:var(--purple); color:var(--cream); position:relative; overflow:hidden; border-radius:22px; margin:8px 0 0; padding:54px 48px 44px; }
 .poster .hero::after{ content:"OPEN"; position:absolute; right:-14px; bottom:-44px; font-family:var(--font-syne); font-weight:800; font-size:300px; line-height:1; color:rgba(255,255,255,.06); letter-spacing:-.04em; pointer-events:none; }

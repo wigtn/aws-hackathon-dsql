@@ -107,8 +107,8 @@ function TicketStub({ t }: { t: Ticket }) {
     <div className="frame" style={{ padding: 0, overflow: "hidden" }}>
       <div className="flex items-center justify-between" style={{ padding: "10px 14px", borderBottom: "1px dashed var(--color-line-2)" }}>
         <Tag tone={activated ? "affirm" : "solid"}>{activated ? "activated" : "valid"}</Tag>
-        <span className="num" style={{ fontSize: 11, color: "var(--color-ink-3)" }}>
-          {t.region ?? "—"}
+        <span className="mono" style={{ fontSize: 11, color: "var(--color-ink-3)" }}>
+          confirmed
         </span>
       </div>
       <div style={{ padding: 14 }}>

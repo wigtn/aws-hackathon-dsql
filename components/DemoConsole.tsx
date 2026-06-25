@@ -76,7 +76,7 @@ export function DemoConsole() {
           {PRESETS.map((p) => {
             const on = capacity === p.capacity && buyers === p.buyers;
             return (
-              <button key={p.label} onClick={() => { setCapacity(p.capacity); setBuyers(p.buyers); }} className={`chip${on ? " on" : ""}`}>
+              <button key={p.label} onClick={() => { setCapacity(p.capacity); setBuyers(p.buyers); }} aria-pressed={on} className={`chip${on ? " on" : ""}`}>
                 {p.label}
               </button>
             );
