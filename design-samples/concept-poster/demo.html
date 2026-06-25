@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpenSlot — The Proof: How OpenSlot Guarantees Zero Oversell</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="marq"><div class="run">CROSS-REGION PROOF&nbsp;&nbsp;●&nbsp;&nbsp;2000 BUYERS · 1 SEAT&nbsp;&nbsp;●&nbsp;&nbsp;<b>OVERSOLD 0</b>&nbsp;&nbsp;●&nbsp;&nbsp;OC000 → RETRY&nbsp;&nbsp;●&nbsp;&nbsp;SAME SEED · SAME RESULT&nbsp;&nbsp;●&nbsp;&nbsp;CROSS-REGION PROOF&nbsp;&nbsp;●&nbsp;&nbsp;2000 BUYERS · 1 SEAT&nbsp;&nbsp;●&nbsp;&nbsp;<b>OVERSOLD 0</b>&nbsp;&nbsp;●&nbsp;&nbsp;OC000 → RETRY&nbsp;&nbsp;●&nbsp;&nbsp;SAME SEED · SAME RESULT&nbsp;&nbsp;●&nbsp;&nbsp;</div></div>
+
+  <div class="wrap">
+    <nav class="nav">
+      <div class="brand"><span class="sq"></span>OpenSlot</div>
+      <div class="links"><a href="index.html">Home</a><a href="console.html">Console</a><a href="demo.html" class="on">Proof</a><a href="discover.html">Discover</a></div>
+      <a href="console.html" class="pill">Back to console →</a>
+    </nav>
+
+    <!-- purple poster header band -->
+    <section class="band" data-wm="0">
+      <div class="kick">The proof · reproducible, on real infrastructure</div>
+      <h1>The proof: how OpenSlot<br>guarantees zero oversell</h1>
+      <div class="sub">Don't take our word for it. Here's the same single seat under a worldwide rush — on real infrastructure. We fire thousands of buyers at one scarce seat across <b>us-east-1</b> and <b>us-east-2</b> at once. Exactly one wins; everyone else gets <b>OC000 → retry</b>. The oversold count is structurally pinned to zero.</div>
+
+      <div class="chips" style="margin-top:26px">
+        <button class="chip on">last seat · 2 regions</button>
+        <button class="chip">capacity 50 · stampede</button>
+      </div>
+
+      <div class="acts" style="margin-top:24px;align-items:center">
+        <a href="#results" class="btn btn-fill">▶ Fire stampede</a>
+        <span class="field short" style="flex:0 0 auto;min-width:0">
+          <label style="color:var(--bright)">seed</label>
+          <input value="42" style="width:120px;background:rgba(0,0,0,.18);color:var(--cream);border-color:rgba(255,255,255,.5)">
+        </span>
+      </div>
+    </section>
+
+    <!-- huge result tiles -->
+    <dl class="resgrid" id="results">
+      <div class="res hot"><dt>Oversold</dt><div class="v num">0</div><div class="sub">structural</div></div>
+      <div class="res"><dt>Granted</dt><div class="v num">1</div><div class="sub">winning commit</div></div>
+      <div class="res"><dt>OC000 conflicts</dt><div class="v num">1999</div><div class="sub">retried losers</div></div>
+      <div class="res"><dt>Buyers</dt><div class="v num">2000</div><div class="sub">concurrent</div></div>
+    </dl>
+
+    <!-- region columns -->
+    <section class="sec">
+      <div class="sh"><h2>By region</h2><span class="lbl" style="color:var(--ink2)">Active-active · honest tradeoff</span></div>
+      <div class="cols2">
+        <div class="regcol">
+          <h3>us-east-1</h3>
+          <div class="rowstat"><span>Writes attempted</span><b class="num">1014</b></div>
+          <div class="rowstat"><span>Commits granted</span><b class="num">1</b></div>
+          <div class="rowstat"><span>OC000 conflicts</span><b class="num">1013</b></div>
+          <div class="rowstat"><span>p95 commit latency</span><b class="num p95">41 ms</b></div>
+        </div>
+        <div class="regcol">
+          <h3>us-east-2</h3>
+          <div class="rowstat"><span>Writes attempted</span><b class="num">986</b></div>
+          <div class="rowstat"><span>Commits granted</span><b class="num">0</b></div>
+          <div class="rowstat"><span>OC000 conflicts</span><b class="num">986</b></div>
+          <div class="rowstat"><span>p95 commit latency</span><b class="num p95">63 ms</b></div>
+        </div>
+      </div>
+      <p class="foot-note">us-east-2 p95 (63 ms) sits above us-east-1 (41 ms) by design — synchronous cross-region commit pays one round-trip to stay strongly consistent. That latency is the honest price of never overselling.</p>
+    </section>
+
+    <!-- latency histogram -->
+    <section class="sec">
+      <div class="sh"><h2>Commit latency</h2><span class="lbl" style="color:var(--ink2)">p95 distribution · ms</span></div>
+      <div class="panel">
+        <div class="histo">
+          <div class="col"><div class="bar" style="height:18%"></div><div class="x">20</div></div>
+          <div class="col"><div class="bar" style="height:36%"></div><div class="x">28</div></div>
+          <div class="col"><div class="bar" style="height:60%"></div><div class="x">36</div></div>
+          <div class="col"><div class="bar" style="height:78%"></div><div class="x">44</div></div>
+          <div class="col"><div class="bar" style="height:58%"></div><div class="x">52</div></div>
+          <div class="col peak"><div class="bar" style="height:100%"></div><div class="x">63</div></div>
+          <div class="col"><div class="bar" style="height:40%"></div><div class="x">72</div></div>
+          <div class="col"><div class="bar" style="height:22%"></div><div class="x">84</div></div>
+          <div class="col"><div class="bar" style="height:11%"></div><div class="x">96+</div></div>
+        </div>
+        <p class="foot-note">Purple bar = the cross-region peak at the us-east-2 p95 (63 ms). The long tail is bounded by exponential backoff + jitter on OC000 retries, so synchronized retry storms never form.</p>
+      </div>
+    </section>
+
+    <section class="proof">
+      <div class="bg">0</div>
+      <div class="l">
+        <h2>Same seed → same result.</h2>
+        <p>Reproducible run · oversold stays 0 every time · granted = 1, conflicts = 1999</p>
+      </div>
+      <a href="console.html" class="btn btn-bright">Open the organizer console →</a>
+    </section>
+
+    <footer class="foot"><span>OpenSlot · strong consistency on Amazon Aurora DSQL · single global commit order</span><span class="num">us-east-1 ⇄ us-east-2 · witness us-west-2</span></footer>
+  </div>
+</body>
+</html>

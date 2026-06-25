@@ -37,7 +37,7 @@ export function SeatMap({ eventId }: { eventId: string }) {
     return (
       <div className="frame" style={{ padding: 28 }}>
         <span className="mono" style={{ color: "var(--color-ink-3)" }}>
-          loading seat ledger…
+          loading seats…
         </span>
       </div>
     );
@@ -91,8 +91,8 @@ export function SeatMap({ eventId }: { eventId: string }) {
             </div>
             <div className="mono" style={{ fontSize: 13, color: "var(--color-ink-3)", marginTop: 6 }}>
               {soldOut
-                ? "strong-consistent across both regions — instantly."
-                : "first commit wins. the loser sees OC000, not a double sale."}
+                ? "Claimed once — and that's final, everywhere, instantly."
+                : "Whoever confirms first gets it. No one else can double-book it."}
             </div>
           </div>
           <button

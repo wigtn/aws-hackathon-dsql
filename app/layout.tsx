@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
+import { Inter, Space_Grotesk, IBM_Plex_Mono, Syne } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 
@@ -9,6 +9,7 @@ const grotesk = Space_Grotesk({
   variable: "--font-display",
   display: "swap",
 });
+const syne = Syne({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-syne", display: "swap" });
 const mono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
@@ -17,61 +18,61 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OpenSlot — zero oversell, across regions",
+  title: "OpenSlot — the on-sale platform for event businesses",
   description:
-    "Global high-demand drops & ticketing. The same scarce seat, bought worldwide at the same instant — with zero oversell, on Amazon Aurora DSQL multi-region strong consistency.",
+    "Run a sold-out on-sale without the disasters. No overselling, no bots, a fair shot for every fan — for artists, brands and promoters.",
 };
 
 const NAV = [
-  { href: "/org/console", label: "Organizer" },
-  { href: "/demo", label: "Cross-region demo" },
-  { href: "/discover", label: "Buyer view" },
-  { href: "/me", label: "My tickets" },
+  { href: "/", label: "Home" },
+  { href: "/org/console", label: "Console" },
+  { href: "/demo", label: "Proof" },
+  { href: "/discover", label: "Discover" },
 ];
+
+const MARQUEE = (
+  <>
+    NOW SELLING&nbsp;&nbsp;●&nbsp;&nbsp;SOLD-OUT ON-SALES THAT DON&apos;T CRASH&nbsp;&nbsp;●&nbsp;&nbsp;
+    <b>NO OVERSELLING</b>&nbsp;&nbsp;●&nbsp;&nbsp;NO BOTS&nbsp;&nbsp;●&nbsp;&nbsp;A FAIR SHOT FOR EVERY FAN&nbsp;&nbsp;●&nbsp;&nbsp;
+  </>
+);
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${grotesk.variable} ${mono.variable}`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${grotesk.variable} ${syne.variable} ${mono.variable}`}
+    >
       <body>
-        <header className="border-b" style={{ borderColor: "var(--color-ink)" }}>
-          <div className="shell flex items-center justify-between" style={{ height: 60 }}>
-            <Link href="/" className="flex items-baseline gap-3 focusable" style={{ textDecoration: "none" }}>
-              <span
-                className="display"
-                style={{ fontSize: 22, color: "var(--color-ink)", letterSpacing: "-0.04em" }}
-              >
-                OpenSlot
-              </span>
-              <span className="eyebrow hidden sm:inline">on-sale infrastructure</span>
+        <div className="os-marq">
+          <div className="run">
+            {MARQUEE}
+            {MARQUEE}
+          </div>
+        </div>
+        <header>
+          <div className="wrap os-nav">
+            <Link href="/" className="os-brand focusable">
+              <span className="sq" />
+              OpenSlot
             </Link>
-            <nav className="flex items-center gap-1">
+            <nav className="os-links">
               {NAV.map((n) => (
-                <Link
-                  key={n.href}
-                  href={n.href}
-                  className="mono focusable"
-                  style={{
-                    fontSize: 12.5,
-                    padding: "8px 12px",
-                    color: "var(--color-ink-2)",
-                    textDecoration: "none",
-                  }}
-                >
+                <Link key={n.href} href={n.href} className="focusable">
                   {n.label}
                 </Link>
               ))}
             </nav>
+            <Link href="/org/onboarding" className="os-pill focusable">
+              Run your on-sale →
+            </Link>
           </div>
         </header>
         <main>{children}</main>
-        <footer className="border-t" style={{ borderColor: "var(--color-line)", marginTop: 80 }}>
-          <div className="shell flex flex-wrap items-center justify-between gap-3" style={{ padding: "22px 24px" }}>
-            <span className="eyebrow">
-              Aurora DSQL ledger · Aurora PostgreSQL discovery · Vercel
-            </span>
-            <span className="num" style={{ fontSize: 11, color: "var(--color-ink-3)" }}>
-              #H0Hackathon · zero oversell across regions
-            </span>
+        <footer>
+          <div className="wrap os-foot">
+            <span>OpenSlot · the on-sale platform for event businesses</span>
+            <span className="num">© 2026 · sell out, safely</span>
           </div>
         </footer>
       </body>

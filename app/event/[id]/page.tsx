@@ -5,7 +5,6 @@ import { SeatMap } from "@/components/SeatMap";
 import { Countdown } from "@/components/Countdown";
 import { Eyebrow, Tag } from "@/components/ui";
 import { StorefrontBar } from "@/components/PoweredBy";
-import { REGION_LABEL } from "@/lib/sim/types";
 
 export default async function EventPage({
   params,
@@ -54,12 +53,12 @@ export default async function EventPage({
               <Countdown target={event.sale_opens_at} />
             </div>
             <div className="rule" style={{ margin: "16px 0" }} />
-            <Eyebrow>availability source of truth</Eyebrow>
+            <Eyebrow>your guarantee</Eyebrow>
             <div className="num" style={{ fontSize: 13, marginTop: 8, color: "var(--color-ink)" }}>
-              Aurora DSQL ledger
+              The seat you pick is yours
             </div>
             <div className="mono" style={{ fontSize: 11.5, color: "var(--color-ink-3)", marginTop: 4 }}>
-              strong-consistent · {Object.values(REGION_LABEL).join(" + ")}
+              never oversold · never double-booked
             </div>
           </div>
 

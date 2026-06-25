@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpenSlot — Organizer Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="marq"><div class="run">ORGANIZER CONSOLE&nbsp;&nbsp;●&nbsp;&nbsp;STRAY HORIZON WORLD TOUR&nbsp;&nbsp;●&nbsp;&nbsp;<b>ON-SALE LIVE</b>&nbsp;&nbsp;●&nbsp;&nbsp;0 DOUBLE-SOLD SEATS&nbsp;&nbsp;●&nbsp;&nbsp;REVENUE PROTECTED $1,740&nbsp;&nbsp;●&nbsp;&nbsp;ORGANIZER CONSOLE&nbsp;&nbsp;●&nbsp;&nbsp;STRAY HORIZON WORLD TOUR&nbsp;&nbsp;●&nbsp;&nbsp;<b>ON-SALE LIVE</b>&nbsp;&nbsp;●&nbsp;&nbsp;0 DOUBLE-SOLD SEATS&nbsp;&nbsp;●&nbsp;&nbsp;REVENUE PROTECTED $1,740&nbsp;&nbsp;●&nbsp;&nbsp;</div></div>
+
+  <div class="wrap">
+    <nav class="nav">
+      <div class="brand"><span class="sq"></span>OpenSlot</div>
+      <div class="links"><a href="index.html">Home</a><a href="console.html" class="on">Console</a><a href="demo.html">Proof</a><a href="discover.html">Discover</a></div>
+      <a href="console.html" class="pill">View seat map →</a>
+    </nav>
+
+    <!-- purple poster header band: drop selector -->
+    <section class="band" data-wm="LIVE">
+      <div class="top" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:20px">
+        <div>
+          <div class="kick">Organizer console · on-sale control</div>
+          <h1>STRAY HORIZON<br>World Tour</h1>
+          <div class="sub"><b>Hallyu Touring</b> · <b>KSPO Dome, Seoul</b> · 60-seat block · $120 face value.</div>
+        </div>
+        <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:16px">
+          <span class="live"><span class="dot"></span>On-sale · LIVE</span>
+          <div class="acts" style="justify-content:flex-end">
+            <a href="#seatmap" class="btn">View seat map</a>
+            <a href="#" class="btn btn-fill">Pause on-sale</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- KPI row -->
+    <dl class="kpis">
+      <div class="kpi"><dt>Tickets sold</dt><div class="v num">9 / 60</div><div class="meta">seats confirmed</div></div>
+      <div class="kpi"><dt>Revenue</dt><div class="v num">$1,080</div><div class="meta">$120 × 9 seats</div></div>
+      <div class="kpi"><dt>Sell-through</dt><div class="v num">15%</div><div class="meta">9 / 60 seats</div></div>
+      <div class="kpi"><dt>Revenue protected</dt><div class="v z num">$1,740</div><div class="meta">est.</div></div>
+    </dl>
+
+    <!-- on-sale health + revenue protected -->
+    <div class="cols2">
+      <div class="panel purple">
+        <div class="ph"><h3>On-sale health</h3><span class="tag">all clear</span></div>
+        <ul class="brk">
+          <li><span>✓ 0 double-sold seats</span></li>
+          <li><span>✓ 0 failed checkouts</span></li>
+          <li><span>✓ 16 bots blocked</span></li>
+          <li><span>✓ Fair allocation verified</span></li>
+        </ul>
+        <p class="foot-note">Your on-sale is running clean — no oversells, no dropped checkouts, no bot wins. Nothing for you to fix.</p>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><h3>Revenue protected</h3><span class="tag">modeled · est.</span></div>
+        <ul class="brk">
+          <li><span>Oversell refunds avoided</span><span class="amt num">$780</span></li>
+          <li><span>Scalper margin kept in your sale</span><span class="amt num">$960</span></li>
+          <li class="total"><span>Total protected · est.</span><span class="amt num">$1,740</span></li>
+        </ul>
+        <p class="foot-note">Refunds avoided = double-sells that never happened. Scalper margin = the markup that stayed in your sale instead of going to resellers.</p>
+      </div>
+    </div>
+
+    <!-- FAIR ALLOCATION — originality centerpiece -->
+    <section class="sec">
+      <div class="sh"><h2>Fair allocation</h2><span class="lbl" style="color:var(--ink2)">Provably fair</span></div>
+      <div class="panel">
+        <div class="ph">
+          <h3>Every fan got their fair shot</h3>
+          <span class="badge"><span class="ck">✓</span> Verified · 9 buyers</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin:8px 0 18px">
+          <div class="stat0"><div class="n num" style="font-size:clamp(48px,9vw,96px)">✓</div><div class="l">Verified</div></div>
+          <p style="max-width:460px;margin:0">All 9 buyers got a seat in the exact order they committed — no bot or insider lane. Same fair shot for everyone, every time.</p>
+        </div>
+        <div class="acts">
+          <a href="#" class="btn btn-fill">Download fairness report</a>
+          <a href="demo.html" class="lbl" style="color:var(--ink2);align-self:center">View technical ledger →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seat map -->
+    <section class="sec" id="seatmap">
+      <div class="sh"><h2>Seat map</h2><span class="lbl" style="color:var(--ink2)">KSPO Dome · 60-seat block</span></div>
+      <div class="cols2 wide-left">
+        <div class="panel">
+          <div class="ph"><h3>Floor map</h3><span class="tag">live</span></div>
+          <div class="seatgrid" id="seatgrid"></div>
+          <div class="seatlegend">
+            <span><i class="open"></i> open</span>
+            <span><i class="held"></i> held</span>
+            <span><i class="confirmed"></i> sold</span>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ph"><h3>Capacity</h3><span class="tag">15% sold</span></div>
+          <div class="meter"><div class="fill" style="width:15%"></div></div>
+          <div class="foot-note" style="margin-top:18px">9 sold · 3 held · 48 open of 60 seats. Held seats return to open if a buyer doesn't finish checkout — and go straight to the next fan in line.</div>
+          <ul class="brk" style="margin-top:18px">
+            <li><span>Sold</span><span class="amt num" style="color:var(--purple)">9</span></li>
+            <li><span>Held</span><span class="amt num">3</span></li>
+            <li><span>Open</span><span class="amt num">48</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <footer class="foot"><span>OpenSlot · the on-sale platform for event businesses</span></footer>
+  </div>
+
+  <script>
+    // build a 12x6 (72) seat grid: 9 confirmed, 3 held, rest open
+    (function(){
+      var grid = document.getElementById('seatgrid');
+      if(!grid) return;
+      var confirmed = {0:1,5:1,11:1,14:1,22:1,30:1,37:1,43:1,51:1}; // 9 seats
+      var held = {7:1,19:1,28:1}; // 3 seats
+      for(var i=0;i<72;i++){
+        var d = document.createElement('div');
+        d.className = 'seat ' + (confirmed[i]?'confirmed':held[i]?'held':'open');
+        grid.appendChild(d);
+      }
+    })();
+  </script>
+</body>
+</html>

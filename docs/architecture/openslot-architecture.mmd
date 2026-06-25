@@ -1,0 +1,49 @@
+---
+config:
+  look: handDrawn
+  theme: default
+  themeVariables:
+    fontFamily: "Apple SD Gothic Neo, Malgun Gothic, Noto Sans KR, sans-serif"
+---
+flowchart TD
+    ORG(["Organizers<br/>(event businesses)"]):::user
+    BUY(["Buyers<br/>(fans)"]):::user
+
+    ORG --> APP
+    BUY --> APP
+
+    subgraph EDGE["Vercel — Next.js 15"]
+      APP["App UI<br/>landing / console / storefront / proof"]:::fe
+      API["API routes<br/>/claim · /org/metrics · /fairness<br/>/discover · /otp"]:::fe
+      APP --> API
+    end
+
+    API -->|"seat claims · metrics · fairness<br/>(IAM auth, pg wire)"| LEDGER
+    API -->|"discovery ranking"| DISC
+
+    subgraph LEDGER["Aurora DSQL — seat ledger (strong consistency)"]
+      direction LR
+      E1[("us-east-1<br/>N. Virginia<br/>read + write")]:::dsql
+      E2[("us-east-2<br/>Ohio<br/>read + write")]:::dsql
+      W[("witness<br/>us-west-2<br/>quorum")]:::wit
+      E1 <-->|"one logical DB<br/>active-active"| E2
+      E1 -.- W
+      E2 -.- W
+    end
+
+    subgraph DISC["Aurora PostgreSQL — discovery"]
+      GEO["PostGIS<br/>geo radius"]:::pg
+      VEC["pgvector<br/>semantic search"]:::pg
+    end
+
+    DISC -->|"join live stock"| LEDGER
+
+    Z["ZERO OVERSELL is structural<br/>one global commit order · conflicts then OC000 retry"]:::note
+    LEDGER --- Z
+
+    classDef user fill:#ffffff,stroke:#5a2be6,stroke-width:2px,color:#3c1aa6;
+    classDef fe fill:#ede7ff,stroke:#5a2be6,stroke-width:2px,color:#2a1568;
+    classDef dsql fill:#5a2be6,stroke:#3c1aa6,stroke-width:2px,color:#ffffff;
+    classDef wit fill:#efeaff,stroke:#7547ff,stroke-width:2px,color:#3c1aa6;
+    classDef pg fill:#e7f0ff,stroke:#2563eb,stroke-width:2px,color:#13327a;
+    classDef note fill:#fff4d6,stroke:#c8730c,stroke-width:2px,color:#7a4a05;
