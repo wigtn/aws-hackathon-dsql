@@ -14,9 +14,11 @@ export default function DemoPage() {
           <span className="kick">The proof · how OpenSlot guarantees zero oversell</span>
           <h1>Don&apos;t take our word for it.</h1>
           <p className="sub">
-            The same single seat under a worldwide rush, on real infrastructure. Thousands of
-            buyers hit two regions at the same instant — the first commit wins, the rest retry.
-            Run it: the number that matters never moves off zero.
+            A deterministic load generator that models Aurora DSQL&apos;s OCC exactly: the same single
+            seat under a worldwide rush, thousands of buyers hitting two regions in the same instant —
+            the first commit wins, the rest get OC000 and retry. Run it: the number that matters never
+            moves off zero. The live cross-region OC000 proof on real Aurora DSQL runs separately
+            (linked below the result).
           </p>
         </section>
         <DemoConsole />

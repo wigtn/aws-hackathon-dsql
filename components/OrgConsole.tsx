@@ -297,7 +297,7 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
               <ul className="check">
                 <li><span className="ck">✓</span> 0 double-sold seats</li>
                 <li><span className="ck">✓</span> 0 failed checkouts</li>
-                <li><span className="ck">✓</span> {d ? d.bots_blocked.toLocaleString() : "—"} bots blocked</li>
+                <li><span className="ck">✓</span> {d ? d.bots_blocked.toLocaleString() : "—"} bot grab attempts priced out · est.</li>
                 <li><span className="ck">✓</span> Fair allocation verified</li>
               </ul>
             </div>

@@ -20,7 +20,7 @@ const mono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "OpenSlot — the on-sale platform for event businesses",
   description:
-    "Run a sold-out on-sale without the disasters. No overselling, no bots, a fair shot for every fan — for artists, brands and promoters.",
+    "Run a sold-out on-sale without the disasters. No overselling, bots priced out, a fair shot for every fan — for artists, brands and promoters.",
 };
 
 const NAV = [
@@ -33,7 +33,7 @@ const NAV = [
 const MARQUEE = (
   <>
     NOW SELLING&nbsp;&nbsp;●&nbsp;&nbsp;SOLD-OUT ON-SALES THAT DON&apos;T CRASH&nbsp;&nbsp;●&nbsp;&nbsp;
-    <b>NO OVERSELLING</b>&nbsp;&nbsp;●&nbsp;&nbsp;NO BOTS&nbsp;&nbsp;●&nbsp;&nbsp;A FAIR SHOT FOR EVERY FAN&nbsp;&nbsp;●&nbsp;&nbsp;
+    <b>NO OVERSELLING</b>&nbsp;&nbsp;●&nbsp;&nbsp;BOTS PRICED OUT&nbsp;&nbsp;●&nbsp;&nbsp;A FAIR SHOT FOR EVERY FAN&nbsp;&nbsp;●&nbsp;&nbsp;
   </>
 );
 
