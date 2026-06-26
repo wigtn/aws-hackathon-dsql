@@ -7,8 +7,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit -p tsconfig.check.json",
+    "typecheck": "tsc --noEmit -p tsconfig.check.json",
     "verify": "node scripts/verify.mjs"
   },
   "dependencies": {

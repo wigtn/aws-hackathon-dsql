@@ -173,6 +173,7 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
   const filled = snap ? snap.capacity - snap.remaining_open : 0;
   const soldOut = snap?.remaining_open === 0;
   const d = metrics?.defended;
+  const loading = !!eventId && (!snap || !metrics);
 
   return (
     <>
@@ -194,7 +195,8 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
                 style={{
                   fontFamily: "var(--font-mono)", fontSize: 12.5, padding: "8px 12px",
                   borderRadius: 8, border: "1.5px solid rgba(255,255,255,.5)",
-                  background: "transparent", color: "var(--cream)",
+                  background: "transparent", color: "var(--cream)", flex: "1 1 280px",
+                  minWidth: 0, maxWidth: "100%", width: "min(100%, 420px)",
                 }}
               >
                 {visible.length === 0 ? (
@@ -218,20 +220,20 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
           <div className="kpis">
             <div className="kpi">
               <dt>Tickets sold</dt>
-              <div className="v num">{metrics ? metrics.taken : "—"}<span style={{ fontSize: 20, color: "var(--pk-ink2)" }}> / {metrics?.capacity ?? snap?.capacity ?? "—"}</span></div>
+              <div className="v num">{metrics ? metrics.taken : loading ? "…" : "—"}<span style={{ fontSize: 20, color: "var(--pk-ink2)" }}> / {metrics?.capacity ?? snap?.capacity ?? (loading ? "…" : "—")}</span></div>
             </div>
             <div className="kpi">
               <dt>Revenue</dt>
-              <div className="v num">{metrics ? usd(metrics.gross_revenue) : "—"}</div>
+              <div className="v num">{metrics ? usd(metrics.gross_revenue) : loading ? "…" : "—"}</div>
             </div>
             <div className="kpi">
               <dt>Sell-through</dt>
-              <div className="v num">{metrics ? `${Math.round(metrics.sell_through * 100)}%` : "—"}</div>
+              <div className="v num">{metrics ? `${Math.round(metrics.sell_through * 100)}%` : loading ? "…" : "—"}</div>
             </div>
             <div className="kpi">
               <dt>Revenue protected</dt>
-              <div className="v num z">{d ? usd(d.total_defended_usd) : "—"}</div>
-              <div className="meta">est.</div>
+              <div className="v num z">{d ? usd(d.total_defended_usd) : loading ? "…" : "—"}</div>
+              <div className="meta">{loading ? "loading" : "est."}</div>
             </div>
           </div>
 
@@ -240,9 +242,20 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
             <div className="pn">
               <div className="ph">
                 <h3>Your seat map</h3>
-                <span className="tag num">{filled} / {snap?.capacity ?? 0} sold</span>
+                <span className="tag num">{snap ? `${filled} / ${snap.capacity} sold` : "loading"}</span>
               </div>
-              {snap && snap.capacity === 1 ? (
+              {!snap ? (
+                <div style={{ padding: "18px 0 6px" }}>
+                  <div className="mono" style={{ fontSize: 12.5, color: "var(--pk-ink2)", lineHeight: 1.55 }}>
+                    Loading live inventory…
+                  </div>
+                  <div className="seatrow" style={{ marginTop: 14 }}>
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <div key={i} className="pseat" data-status="released" />
+                    ))}
+                  </div>
+                </div>
+              ) : snap.capacity === 1 ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "10px 0 4px" }}>
                   <div className="pseat" data-status={seatStatus((snap.seats[0] ?? { seat_no: 1, section: "GA", status: "open", reserved: false }) as Seat)} style={{ width: 56, height: 56, fontSize: 13 }} />
                   <div className="mono" style={{ fontSize: 12.5, color: "var(--pk-ink2)", lineHeight: 1.55 }}>
@@ -253,14 +266,14 @@ export function OrgConsole({ events: initial }: { events: EvOpt[] }) {
                 <>
                   <div className="flex items-center justify-between" style={{ margin: "2px 0 8px" }}>
                     <span className="lbl" style={{ color: "var(--pk-ink2)" }}>Stage</span>
-                    <span className="lbl" style={{ color: "var(--pk-ink2)" }}>{snap?.remaining_open ?? 0} open</span>
+                    <span className="lbl" style={{ color: "var(--pk-ink2)" }}>{snap.remaining_open} open</span>
                   </div>
                   <div style={{ height: 4, background: "var(--purple)", marginBottom: 6, borderRadius: 2 }} />
-                  {Array.from(new Set((snap?.seats ?? []).map((s) => s.section))).map((sec) => (
+                  {Array.from(new Set(snap.seats.map((s) => s.section))).map((sec) => (
                     <div key={sec}>
                       <div className="section-h">{sec}</div>
                       <div className="seatrow">
-                        {(snap?.seats ?? [])
+                        {snap.seats
                           .filter((s) => s.section === sec)
                           .slice(0, 60)
                           .map((s) => (

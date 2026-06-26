@@ -185,7 +185,7 @@ body {
 
 /* brand body surface */
 body{ background:var(--cream); background-image:none; }
-.wrap{ max-width:1240px; margin:0 auto; padding:0 32px; }
+.wrap{ max-width:1240px; width:100%; box-sizing:border-box; margin:0 auto; padding:0 32px; }
 .lbl{ font-family:var(--font-mono); font-size:11px; letter-spacing:.2em; text-transform:uppercase; }
 
 /* ---- shared shell (global) ---- */
@@ -274,18 +274,19 @@ body{ background:var(--cream); background-image:none; }
 
 /* inner-page building blocks */
 .poster .kpis{ display:grid; grid-template-columns:repeat(4,1fr); border:2px solid var(--pk-ink); border-radius:14px; overflow:hidden; margin-top:28px; }
-.poster .kpi{ padding:22px 22px 20px; border-right:1px solid var(--pink-line); }
+.poster .kpi{ min-width:0; box-sizing:border-box; padding:22px 22px 20px; border-right:1px solid var(--pink-line); }
 .poster .kpi:last-child{ border-right:0; }
 .poster .kpi dt{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--pk-ink2); }
 .poster .kpi .v{ font-family:var(--font-syne); font-weight:800; font-size:42px; letter-spacing:-.03em; line-height:.92; margin-top:12px; }
 .poster .kpi .v.z{ color:var(--purple); }
 .poster .kpi .meta{ font-family:var(--font-mono); font-size:11px; color:var(--pk-ink2); margin-top:8px; }
 
-.poster .pn{ border:2px solid var(--pk-ink); border-radius:14px; padding:24px 26px; background:var(--cream); }
+.poster .pn{ min-width:0; box-sizing:border-box; border:2px solid var(--pk-ink); border-radius:14px; padding:24px 26px; background:var(--cream); }
 .poster .pn .ph{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:16px; }
 .poster .pn .ph h3{ font-family:var(--font-syne); font-weight:800; font-size:19px; text-transform:uppercase; letter-spacing:-.02em; }
 .poster .pn .ph .tag{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--pk-ink2); }
 .poster .cols2{ display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:28px; }
+.poster .cols2>*{ min-width:0; }
 .poster .cols2.wide-left{ grid-template-columns:1.3fr 1fr; }
 
 .poster .check{ list-style:none; }

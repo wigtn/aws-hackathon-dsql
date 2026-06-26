@@ -169,8 +169,10 @@ export function DemoConsole() {
           </div>
 
           <p className="mono" style={{ fontSize: 11.5, color: "var(--pk-ink2)", marginTop: 18, lineHeight: 1.6 }}>
-            Honest cost: cross-region commits pay ~2 RTT of synchronous replication (visible in us-east-2 p95).
-            That latency is the price of zero data loss and zero stale reads — async Postgres has no option that buys it.
+            Honest cost: cross-region commits pay synchronous-replication latency. In a last-seat run,
+            only the winning region has commit p95; capacity presets show the cross-region shape across
+            both regions. That latency is the price of zero data loss and zero stale reads — async
+            Postgres has no option that buys it.
           </p>
 
           {config && (
