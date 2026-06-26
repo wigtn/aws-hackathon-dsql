@@ -60,7 +60,7 @@ export default function HomePage() {
 
         <div className="points">
           <div className="z">0 double-sold seats</div>
-          <div>0 bot wins</div>
+          <div>Bots priced out of the grab</div>
           <div>A fair shot for every fan</div>
           <div>Revenue protected, every drop</div>
         </div>

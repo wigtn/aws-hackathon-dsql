@@ -25,6 +25,14 @@ interface Result {
   regions: RegionStats[];
   histogram: { label: string; lo: number; hi: number; count: number }[];
 }
+interface Config {
+  regions: string[];
+  witness: string;
+  isolation: string;
+  engine: string;
+  live_data_plane: "multi" | "single" | "simulation";
+  real_proof: string;
+}
 
 const PRESETS = [
   { label: "last seat · 2 regions", capacity: 1, buyers: 800 },
@@ -37,6 +45,7 @@ export function DemoConsole() {
   const [buyers, setBuyers] = useState(800);
   const [seed, setSeed] = useState(42);
   const [result, setResult] = useState<Result | null>(null);
+  const [config, setConfig] = useState<Config | null>(null);
   const [running, setRunning] = useState(false);
 
   async function run() {
@@ -49,9 +58,17 @@ export function DemoConsole() {
     const data = await res.json();
     setTimeout(() => {
       setResult(data.result);
+      setConfig(data.config ?? null);
       setRunning(false);
     }, 420);
   }
+
+  const planeLabel =
+    config?.live_data_plane === "multi"
+      ? "live · multi-region Aurora DSQL"
+      : config?.live_data_plane === "single"
+        ? "live · single-region Aurora DSQL"
+        : "in-memory simulation";
 
   const maxBar = result ? Math.max(1, ...result.histogram.map((h) => h.count)) : 1;
   const peakIdx = result
@@ -155,6 +172,30 @@ export function DemoConsole() {
             Honest cost: cross-region commits pay ~2 RTT of synchronous replication (visible in us-east-2 p95).
             That latency is the price of zero data loss and zero stale reads — async Postgres has no option that buys it.
           </p>
+
+          {config && (
+            <div className="pn" style={{ marginTop: 18 }}>
+              <div className="ph">
+                <h3>What just ran</h3>
+                <span className="tag">{config.engine.startsWith("simulation") ? "simulation" : "live"}</span>
+              </div>
+              <ul className="check" style={{ fontSize: 13 }}>
+                <li>
+                  <span className="ck">i</span> Engine: <b>{config.engine}</b> — a deterministic load
+                  generator that reproduces DSQL&apos;s OCC (snapshot isolation, OC000 on conflict) at
+                  barrel-synchronized max contention. It is not a live database call.
+                </li>
+                <li>
+                  <span className="ck">i</span> Live data plane backing the real app:{" "}
+                  <b>{planeLabel}</b>.
+                </li>
+                <li>
+                  <span className="ck">✓</span> Real cross-region OC000 proof on Aurora DSQL:{" "}
+                  <code className="mono">{config.real_proof}</code> (run against {config.regions.join(" + ")}, witness {config.witness}).
+                </li>
+              </ul>
+            </div>
+          )}
         </>
       )}
     </div>
