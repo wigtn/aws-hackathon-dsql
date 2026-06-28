@@ -64,7 +64,7 @@ export const SEED_ORGS: Organization[] = [
   },
   {
     id: "org-popmart",
-    name: "POP MART",
+    name: "Charm Lab",
     category: "drop",
     city: "Seoul",
     country: "KR",
@@ -84,7 +84,7 @@ export const SEED_ORGS: Organization[] = [
   },
   {
     id: "org-snkrs",
-    name: "SNKRS",
+    name: "DropZone",
     category: "drop",
     city: "New York",
     country: "US",
@@ -101,7 +101,7 @@ export const SEED_DROPS: SeedDrop[] = [
   {
     id: "ev-kpop-world",
     org_id: "org-hallyu",
-    title: "STRAY HORIZON World Tour",
+    title: "SKYLINE HORIZON World Tour",
     subtitle: "Global on-sale · 18 cities",
     venue: "KSPO Dome",
     capacity: 60,
@@ -113,7 +113,7 @@ export const SEED_DROPS: SeedDrop[] = [
   {
     id: "ev-eras-seoul",
     org_id: "org-hallyu",
-    title: "ERAS — The Final Night",
+    title: "AURORA NIGHTS — The Final Show",
     subtitle: "Seoul · last-seat release",
     venue: "Goyang Stadium",
     city: "Goyang",
@@ -129,7 +129,7 @@ export const SEED_DROPS: SeedDrop[] = [
   {
     id: "ev-labubu",
     org_id: "org-popmart",
-    title: "LABUBU · Macaron Series Restock",
+    title: "LUMA · Blind-Box Restock",
     subtitle: "Limited drop · 1 per buyer",
     venue: "Online + Hongdae flagship",
     capacity: 1,
@@ -141,9 +141,9 @@ export const SEED_DROPS: SeedDrop[] = [
   {
     id: "ev-snkrs",
     org_id: "org-snkrs",
-    title: "Air Jordan 1 'Lost & Found'",
+    title: "PHANTOM 92 · Vault Release",
     subtitle: "Global drop · regional allocation",
-    venue: "SNKRS App",
+    venue: "DropZone App",
     city: "Global",
     capacity: 40,
     price: 200,

@@ -123,7 +123,11 @@ async function reanchorCatalog() {
   const s = store();
   for (const ev of s.events) {
     const slot = s.slots.get(ev.id);
-    await q(PRIMARY, "UPDATE events SET sale_opens_at=$1 WHERE id=$2", [ev.sale_opens_at, ev.id]).catch(() => {});
+    // Refresh the demo catalog's clock AND its display fields, so a cluster
+    // seeded earlier (e.g. with old names) self-heals to the current seed on
+    // cold start — bounded to the known ids; organizer custom drops untouched.
+    await q(PRIMARY, "UPDATE events SET sale_opens_at=$1, title=$2, subtitle=$3, venue=$4, organizer_name=$5 WHERE id=$6",
+      [ev.sale_opens_at, ev.title, ev.subtitle, ev.venue, ev.organizer_name, ev.id]).catch(() => {});
     if (slot) await q(PRIMARY, "UPDATE drop_slots SET sale_opens_at=$1 WHERE id=$2", [slot.sale_opens_at, slot.id]).catch(() => {});
   }
 }

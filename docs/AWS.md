@@ -66,6 +66,22 @@ cross-region writes but does **not** support PostGIS or pgvector — so geo radi
 search and semantic ranking force a real Postgres (CLAUDE.md §4, PRD §5). This is
 the dual-DB justification made literal, and the second AWS-DB submission screenshot.
 
+## Cluster (live · account 800445863365)
+
+| Item | Value |
+|---|---|
+| Cluster | `openslot-discovery` (Aurora PostgreSQL **16.9**, Serverless v2 0.5–2 ACU) |
+| Writer | `openslot-discovery-1` (`db.serverless`, publicly accessible) |
+| Region | us-east-1 (N. Virginia) |
+| Writer endpoint | `openslot-discovery.cluster-cmx2ig2owws2.us-east-1.rds.amazonaws.com:5432` |
+| Master user | `openslot` · db `postgres` (password in `.env`, gitignored) |
+| Security group | `sg-0d7eb7de881a17630` (inbound 5432) |
+
+**Proof run (real infra):** `postgis 3.5.1` + `vector 0.8.0` enabled · GiST +
+HNSW(`vector_cosine_ops`) indexes · PROOF A `ST_DWithin ≤ 50 km` returns Seoul
+events and excludes the NYC drop · PROOF B `pgvector <=>` ranks the indie show #1
+for "indie show this weekend near me" → **RESULT: PASS**.
+
 ## Provision (Aurora PostgreSQL Serverless v2)
 
 Use an existing default VPC's subnets + a security group that allows inbound 5432
@@ -122,8 +138,8 @@ model and the API honestly reports `plane: "simulation"` (no false real-plane cl
 ## Teardown (after the demo)
 
 ```bash
-aws rds delete-db-instance --region us-east-1 --db-instance-identifier openslot-pg-1 --skip-final-snapshot
-aws rds delete-db-cluster  --region us-east-1 --db-cluster-identifier openslot-pg --skip-final-snapshot
+aws rds delete-db-instance --region us-east-1 --db-instance-identifier openslot-discovery-1 --skip-final-snapshot
+aws rds delete-db-cluster  --region us-east-1 --db-cluster-identifier openslot-discovery --skip-final-snapshot
 ```
 
 > Serverless v2 bills per ACU-hour — min 0.5 ACU runs ~24/7 while the cluster
