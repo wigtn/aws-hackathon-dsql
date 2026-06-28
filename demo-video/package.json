@@ -1,0 +1,23 @@
+{
+  "name": "openslot-demo-video",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render OpenSlotDemo out/openslot-demo.mp4 --concurrency=2"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.249",
+    "@remotion/google-fonts": "^4.0.249",
+    "@remotion/transitions": "^4.0.249",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "react-icons": "^5.4.0",
+    "remotion": "4.0.249"
+  },
+  "devDependencies": {
+    "@types/react": "19.0.0",
+    "puppeteer": "23.10.4",
+    "typescript": "5.7.2"
+  }
+}

@@ -26,10 +26,10 @@ const vec = (arr) => `[${arr.join(",")}]`;
 const MIN = 60_000;
 const now = Date.now();
 const CATALOG = [
-  { id: "ev-eras-seoul", organizer_id: "org-tne", organizer_name: "Transcend Live", title: "ERAS — The Final Night", subtitle: "Seoul · last-seat release", category: "concert", venue: "Goyang Stadium", city: "Seoul", country: "KR", lat: 37.6708, lng: 126.7794, opens: now - 5 * MIN, price: 180, resale_markup: 4.5, w: { pop: 2, arena: 1.5, global: 1, weekend: 1 } },
-  { id: "ev-kpop-world", organizer_id: "org-hybe", organizer_name: "Hallyu Touring", title: "STRAY HORIZON World Tour", subtitle: "Global on-sale · 18 cities", category: "concert", venue: "KSPO Dome", city: "Seoul", country: "KR", lat: 37.5202, lng: 127.1262, opens: now - 1 * MIN, price: 120, resale_markup: 5.0, w: { kpop: 2, global: 1.5, arena: 1 } },
-  { id: "ev-labubu", organizer_id: "org-popmart", organizer_name: "POP MART", title: "LABUBU · Macaron Series Restock", subtitle: "Limited drop · 1 per buyer", category: "drop", venue: "Online + Hongdae flagship", city: "Seoul", country: "KR", lat: 37.5563, lng: 126.9236, opens: now - 2 * MIN, price: 45, resale_markup: 6.0, w: { collectible: 2, gaming: 0.6, weekend: 1, global: 1 } },
-  { id: "ev-snkrs", organizer_id: "org-nike", organizer_name: "SNKRS", title: "Air Jordan 1 'Lost & Found'", subtitle: "Global drop · regional allocation", category: "drop", venue: "SNKRS App", city: "Global", country: "US", lat: 40.7128, lng: -74.006, opens: now - 3 * MIN, price: 200, resale_markup: 3.5, w: { sneakers: 2, collectible: 1.2, global: 1.5 } },
+  { id: "ev-eras-seoul", organizer_id: "org-tne", organizer_name: "Transcend Live", title: "AURORA NIGHTS — The Final Show", subtitle: "Seoul · last-seat release", category: "concert", venue: "Goyang Stadium", city: "Seoul", country: "KR", lat: 37.6708, lng: 126.7794, opens: now - 5 * MIN, price: 180, resale_markup: 4.5, w: { pop: 2, arena: 1.5, global: 1, weekend: 1 } },
+  { id: "ev-kpop-world", organizer_id: "org-hybe", organizer_name: "Hallyu Touring", title: "SKYLINE HORIZON World Tour", subtitle: "Global on-sale · 18 cities", category: "concert", venue: "KSPO Dome", city: "Seoul", country: "KR", lat: 37.5202, lng: 127.1262, opens: now - 1 * MIN, price: 120, resale_markup: 5.0, w: { kpop: 2, global: 1.5, arena: 1 } },
+  { id: "ev-labubu", organizer_id: "org-popmart", organizer_name: "Charm Lab", title: "LUMA · Blind-Box Restock", subtitle: "Limited drop · 1 per buyer", category: "drop", venue: "Online + Hongdae flagship", city: "Seoul", country: "KR", lat: 37.5563, lng: 126.9236, opens: now - 2 * MIN, price: 45, resale_markup: 6.0, w: { collectible: 2, gaming: 0.6, weekend: 1, global: 1 } },
+  { id: "ev-snkrs", organizer_id: "org-nike", organizer_name: "DropZone", title: "PHANTOM 92 · Vault Release", subtitle: "Global drop · regional allocation", category: "drop", venue: "DropZone App", city: "Global", country: "US", lat: 40.7128, lng: -74.006, opens: now - 3 * MIN, price: 200, resale_markup: 3.5, w: { sneakers: 2, collectible: 1.2, global: 1.5 } },
   { id: "ev-indie", organizer_id: "org-club", organizer_name: "Club Plankton", title: "Slow Static + The Hours", subtitle: "Indie night · Itaewon", category: "concert", venue: "Club Plankton", city: "Seoul", country: "KR", lat: 37.5345, lng: 126.9946, opens: now + 20 * MIN, price: 35, resale_markup: 2.5, w: { indie: 2, rock: 1, club: 1.5, weekend: 1.5 } },
   { id: "ev-cup-final", organizer_id: "org-fa", organizer_name: "Continental Cup", title: "Continental Cup — Final", subtitle: "Knockout · category 1", category: "sports", venue: "Seoul World Cup Stadium", city: "Seoul", country: "KR", lat: 37.5683, lng: 126.8973, opens: now + 30 * MIN, price: 90, resale_markup: 4.0, w: { sports: 2, arena: 1.5, global: 1 } },
 ];
@@ -103,7 +103,7 @@ try {
   console.log("\n========== PROOF A · PostGIS ST_DWithin (≤ 50 km of Seoul) ==========");
   for (const r of geo.rows) console.log(`  ${String(r.km).padStart(5)} km  ${r.title}  [${r.city}]`);
   const geoIds = geo.rows.map((r) => r.title);
-  const excludesNYC = !geoIds.some((t) => t.includes("Jordan")); // SNKRS is in NYC
+  const excludesNYC = !geoIds.some((t) => t.includes("PHANTOM")); // the NYC drop is out of range
 
   // ---- 5. PROOF B — pgvector semantic rank (the app's own query) -------------
   const QUERY = "indie show this weekend near me";
@@ -123,7 +123,7 @@ try {
 
   // ---- 6. verdict ------------------------------------------------------------
   console.log("\n====================================================================");
-  console.log(`PostGIS radius excludes out-of-range (NYC SNKRS): ${excludesNYC ? "✓" : "✗"}`);
+  console.log(`PostGIS radius excludes out-of-range (NYC drop): ${excludesNYC ? "✓" : "✗"}`);
   console.log(`pgvector ranks the indie show #1 for the indie query: ${semOk ? "✓" : "✗"}`);
   const pass = excludesNYC && semOk && ext.rows.length === 2;
   console.log(pass

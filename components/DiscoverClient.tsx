@@ -26,7 +26,7 @@ const CHIPS = [
   "indie shows this weekend",
   "k-pop world tour",
   "sneaker drops",
-  "labubu restock",
+  "blind-box restock",
   "cup final",
 ];
 

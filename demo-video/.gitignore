@@ -1,0 +1,11 @@
+# deps & build artifacts
+node_modules/
+out/
+.remotion/
+
+# large source recording (kept local; the rendered film is also out/)
+public/demo.mp4
+public/*.mov
+
+# misc
+.DS_Store
